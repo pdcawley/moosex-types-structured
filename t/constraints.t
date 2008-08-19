@@ -1,7 +1,7 @@
 BEGIN {
 	use strict;
 	use warnings;
-	use Test::More tests=>23;
+	use Test::More tests=>25;
 	use Test::Exception;
 }
 
@@ -11,11 +11,11 @@ BEGIN {
     use Moose;
     use Moose::Util::TypeConstraints;
     use MooseX::Meta::TypeConstraint::Structured;
-    
+
     subtype 'MyString',
      as 'Str',
      where { $_=~m/abc/};
-      
+
     sub Tuple {
         my @args = @{shift @_};
         return MooseX::Meta::TypeConstraint::Structured->new(
@@ -23,11 +23,11 @@ BEGIN {
             parent => find_type_constraint('ArrayRef'),
             package_defined_in => __PACKAGE__,
             signature => [map {
-				Moose::Util::TypeConstraints::find_or_parse_type_constraint($_)
+				_normalize_type_constraint($_);
 			} @args],
         );
     }
-	
+
     sub Dict {
         my %args = @{shift @_};
         return MooseX::Meta::TypeConstraint::Structured->new(
@@ -35,16 +35,26 @@ BEGIN {
             parent => find_type_constraint('HashRef'),
             package_defined_in => __PACKAGE__,
             signature => {map {
-				$_ => Moose::Util::TypeConstraints::find_or_parse_type_constraint($args{$_})
+				$_ => _normalize_type_constraint($args{$_});
 			} keys %args},
         );
     }
+
+	sub _normalize_type_constraint {
+		my $tc = shift @_;
+		if($tc && blessed $tc && $tc->isa('Moose::Meta::TypeConstraint')) {
+			return $tc;
+		} elsif($tc) {
+			return Moose::Util::TypeConstraints::find_or_parse_type_constraint($tc);
+		}
+	}
 
     has 'tuple' => (is=>'rw', isa=>Tuple['Int', 'Str', 'MyString']);
     has 'dict' => (is=>'rw', isa=>Dict[name=>'Str', age=>'Int']);
     has 'dict_with_maybe' => (is=>'rw', isa=>Dict[name=>'Str', age=>'Maybe[Int]']);	
 	has 'tuple_with_param' => (is=>'rw', isa=>Tuple['Int', 'Str', 'ArrayRef[Int]']);
 	has 'tuple_with_maybe' => (is=>'rw', isa=>Tuple['Int', 'Str', 'Maybe[Int]']);
+	has 'dict_with_tuple' => (is=>'rw', isa=>Dict[key1=>'Str', key2=>Tuple['Int','Str']]);
 }
 
 ## Instantiate a new test object
@@ -54,7 +64,7 @@ ok my $record = Test::MooseX::Meta::TypeConstraint::Structured->new
  
 isa_ok $record => 'Test::MooseX::Meta::TypeConstraint::Structured'
  => 'Created correct object type.';
-  
+ 
 ## Test Tuple type constraint
 
 lives_ok sub {
@@ -148,4 +158,17 @@ throws_ok sub {
 lives_ok sub {
     $record->dict_with_maybe({name=>'usal'});
 } => 'Set dict attribute without error, skipping optional';
- 
+
+## Test dict_with_tuple
+
+lives_ok sub {
+    $record->dict_with_tuple({key1=>'Hello', key2=>[1,'World']});
+} => 'Set tuple attribute without error';
+
+throws_ok sub {
+    $record->dict_with_tuple({key1=>'Hello', key2=>['World',2]});
+}, qr/Validation failed for 'Int'/
+ => 'Threw error on bad constraint';
+
+
+
