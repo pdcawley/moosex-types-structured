@@ -1,7 +1,7 @@
 BEGIN {
 	use strict;
 	use warnings;
-	use Test::More tests=>6;
+	use Test::More tests=>8;
 	use Test::Exception;
 }
 
@@ -11,6 +11,10 @@ BEGIN {
     use Moose;
     use Moose::Util::TypeConstraints;
     use MooseX::Meta::TypeConstraint::Structured;
+    
+    subtype 'MyString',
+     as 'Str',
+     where { $_=~m/abc/};
       
     sub Tuple {
         my $args = shift @_;
@@ -21,8 +25,8 @@ BEGIN {
             signature => [map {find_type_constraint($_)} @$args],
         );
     }
-     
-    has 'tuple' => (is=>'rw', isa=>Tuple['Int', 'Str']);
+
+    has 'tuple' => (is=>'rw', isa=>Tuple['Int', 'Str', 'MyString']);
 }
 
 ## Instantiate a new test object
@@ -34,7 +38,7 @@ isa_ok $record => 'Test::MooseX::Meta::TypeConstraint::Structured::Positional'
  => 'Created correct object type.';
 
 lives_ok sub {
-    $record->tuple([1,'hello']);
+    $record->tuple([1,'hello', 'test.abc.test']);
 } => 'Set tuple attribute without error';
 
 is $record->tuple->[0], 1
@@ -43,8 +47,16 @@ is $record->tuple->[0], 1
 is $record->tuple->[1], 'hello'
  => 'correct set the tuple attribute index 1';
 
+is $record->tuple->[2], 'test.abc.test'
+ => 'correct set the tuple attribute index 2';
+
 throws_ok sub {
-    $record->tuple(['asdasd',2]);      
+    $record->tuple([1,'hello', 'test.xxx.test']);    
+}, qr/Validation failed for 'MyString'/
+ => 'Properly failed for bad value in custom type constraint';
+ 
+throws_ok sub {
+    $record->tuple(['asdasd',2, 'test.abc.test']);      
 }, qr/Validation failed for 'Int'/
  => 'Got Expected Error for violating constraints';
 
