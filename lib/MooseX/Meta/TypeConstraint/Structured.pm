@@ -43,9 +43,27 @@ contraint container.
 
 =cut
 
+subtype 'MooseX::Meta::TypeConstraint::Structured::Signature',
+    as 'HashRef[Object]',
+    where {
+        my %signature = %$_;
+        foreach my $key (keys %signature) {
+            $signature{$key}->isa('Moose::Meta::TypeConstraint');
+        } 1;
+    };
+ 
+coerce 'MooseX::Meta::TypeConstraint::Structured::Signature',
+    from 'ArrayRef[Object]',
+    via {
+        my @signature = @$_;
+        my %hashed_signature = map { $_ => $signature[$_] } 0..$#signature;
+        \%hashed_signature;
+    };
+
 has 'signature' => (
     is=>'ro',
-    isa=>'Ref',
+    isa=>'MooseX::Meta::TypeConstraint::Structured::Signature',
+    coerce=>1,
     required=>1,
 );
 
@@ -55,16 +73,23 @@ This class defines the following methods.
 
 =head2 _normalize_args
 
-Get arguments into a known state or die trying
+Get arguments into a known state or die trying.  Ideally we try to make this
+into a HashRef so we can match it up with the L</signature> HashRef.
 
 =cut
 
 sub _normalize_args {
     my ($self, $args) = @_;
-    if(defined $args && ref $args eq 'ARRAY') {
-        return @{$args};
+    if(defined $args) {
+        if(ref $args eq 'ARRAY') {
+            return map { $_ => $args->[$_] } (0..$#$args);
+        } elsif (ref $args eq 'HASH') {
+            return %$args;
+        } else {
+            confess 'Signature must be a reference';
+        }
     } else {
-        confess 'Arguments not ArrayRef as expected.';
+        confess 'Signature cannot be empty';
     }
 }
     
@@ -77,13 +102,54 @@ The constraint is basically validating the L</signature> against the incoming
 sub constraint {
     my $self = shift;
     return sub {
-        my @args = $self->_normalize_args(shift);
-        foreach my $idx (0..$#args) {
-            if(my $error = $self->signature->[$idx]->validate($args[$idx])) {
+        my %args = $self->_normalize_args(shift);
+        foreach my $idx (keys %{$self->signature}) {
+            my $type_constraint = $self->signature->{$idx};
+            if(my $error = $type_constraint->validate($args{$idx})) {
                 confess $error;
             }
         } 1;        
     };
+}
+
+=head2 equals
+
+modifier to make sure equals descends into the L</signature>
+
+=cut
+
+around 'equals' => sub {
+    my ($equals, $self, $compared_type_constraint) = @_;
+    
+    ## Make sure we are comparing typeconstraints of the same base class
+    return unless $compared_type_constraint->isa(__PACKAGE__);
+    
+    ## Make sure the base equals is also good
+    return unless $self->$equals($compared_type_constraint);
+    
+    ## Make sure the signatures match
+    return unless $self->signature_equals($compared_type_constraint);
+   
+    ## If we get this far, the two are equal
+    return 1;
+};
+
+=head2 signature_equals
+
+Check that the signature equals another signature.
+
+=cut
+
+sub signature_equals {
+    my ($self, $compared_type_constraint) = @_;
+    
+   foreach my $idx (keys %{$self->signature}) {
+        my $this = $self->signature->{$idx};
+        my $that = $compared_type_constraint->signature->{$idx};
+        return unless $this->equals($that);
+    }
+   
+    return 1;
 }
 
 =head1 AUTHOR

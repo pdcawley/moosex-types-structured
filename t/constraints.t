@@ -1,12 +1,12 @@
 BEGIN {
 	use strict;
 	use warnings;
-	use Test::More tests=>8;
+	use Test::More tests=>12;
 	use Test::Exception;
 }
 
 {
-    package Test::MooseX::Meta::TypeConstraint::Structured::Positional;
+    package Test::MooseX::Meta::TypeConstraint::Structured;
 
     use Moose;
     use Moose::Util::TypeConstraints;
@@ -17,25 +17,38 @@ BEGIN {
      where { $_=~m/abc/};
       
     sub Tuple {
-        my $args = shift @_;
+        my @args = @{shift @_};
         return MooseX::Meta::TypeConstraint::Structured->new(
             name => 'Tuple',
             parent => find_type_constraint('ArrayRef'),
             package_defined_in => __PACKAGE__,
-            signature => [map {find_type_constraint($_)} @$args],
+            signature => [map {find_type_constraint($_)} @args],
+        );
+    }
+	
+    sub Dict {
+        my %args = @{shift @_};
+        return MooseX::Meta::TypeConstraint::Structured->new(
+            name => 'Tuple',
+            parent => find_type_constraint('HashRef'),
+            package_defined_in => __PACKAGE__,
+            signature => {map { $_ => find_type_constraint($args{$_})} keys %args},
         );
     }
 
     has 'tuple' => (is=>'rw', isa=>Tuple['Int', 'Str', 'MyString']);
+    has 'dict' => (is=>'rw', isa=>Dict[name=>'Str', age=>'Int']);
 }
 
 ## Instantiate a new test object
 
-ok my $record = Test::MooseX::Meta::TypeConstraint::Structured::Positional->new
+ok my $record = Test::MooseX::Meta::TypeConstraint::Structured->new
  => 'Instantiated new Record test class.';
  
-isa_ok $record => 'Test::MooseX::Meta::TypeConstraint::Structured::Positional'
+isa_ok $record => 'Test::MooseX::Meta::TypeConstraint::Structured'
  => 'Created correct object type.';
+
+## Test Tuple type constraint
 
 lives_ok sub {
     $record->tuple([1,'hello', 'test.abc.test']);
@@ -60,3 +73,19 @@ throws_ok sub {
 }, qr/Validation failed for 'Int'/
  => 'Got Expected Error for violating constraints';
 
+## Test the Dictionary type constraint
+ 
+lives_ok sub {
+    $record->dict({name=>'frith', age=>23});
+} => 'Set dict attribute without error';
+
+is $record->dict->{name}, 'frith'
+ => 'correct set the dict attribute name';
+
+is $record->dict->{age}, 23
+ => 'correct set the dict attribute age';
+ 
+throws_ok sub {
+    $record->dict({name=>[1,2,3], age=>'sdfsdfsd'});      
+}, qr/Validation failed for 'Str'/
+ => 'Got Expected Error for bad value in dict';
