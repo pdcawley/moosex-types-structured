@@ -1,7 +1,7 @@
 BEGIN {
 	use strict;
 	use warnings;
-	use Test::More tests=>12;
+	use Test::More tests=>23;
 	use Test::Exception;
 }
 
@@ -22,22 +22,29 @@ BEGIN {
             name => 'Tuple',
             parent => find_type_constraint('ArrayRef'),
             package_defined_in => __PACKAGE__,
-            signature => [map {find_type_constraint($_)} @args],
+            signature => [map {
+				Moose::Util::TypeConstraints::find_or_parse_type_constraint ($_)
+			} @args],
         );
     }
 	
     sub Dict {
         my %args = @{shift @_};
         return MooseX::Meta::TypeConstraint::Structured->new(
-            name => 'Tuple',
+            name => 'Dict',
             parent => find_type_constraint('HashRef'),
             package_defined_in => __PACKAGE__,
-            signature => {map { $_ => find_type_constraint($args{$_})} keys %args},
+            signature => {map {
+				$_ => Moose::Util::TypeConstraints::find_or_parse_type_constraint($args{$_})
+			} keys %args},
         );
     }
 
     has 'tuple' => (is=>'rw', isa=>Tuple['Int', 'Str', 'MyString']);
     has 'dict' => (is=>'rw', isa=>Dict[name=>'Str', age=>'Int']);
+    has 'dict_with_maybe' => (is=>'rw', isa=>Dict[name=>'Str', age=>'Maybe[Int]']);	
+	has 'tuple_with_param' => (is=>'rw', isa=>Tuple['Int', 'Str', 'ArrayRef[Int]']);
+	has 'tuple_with_maybe' => (is=>'rw', isa=>Tuple['Int', 'Str', 'Maybe[Int]']);
 }
 
 ## Instantiate a new test object
@@ -47,7 +54,7 @@ ok my $record = Test::MooseX::Meta::TypeConstraint::Structured->new
  
 isa_ok $record => 'Test::MooseX::Meta::TypeConstraint::Structured'
  => 'Created correct object type.';
-
+  
 ## Test Tuple type constraint
 
 lives_ok sub {
@@ -89,3 +96,56 @@ throws_ok sub {
     $record->dict({name=>[1,2,3], age=>'sdfsdfsd'});      
 }, qr/Validation failed for 'Str'/
  => 'Got Expected Error for bad value in dict';
+
+## Test tuple_with_maybe
+
+lives_ok sub {
+    $record->tuple_with_maybe([1,'hello', 1]);
+} => 'Set tuple attribute without error';
+
+throws_ok sub {
+    $record->tuple_with_maybe([1,'hello', 'a']);
+}, qr/Validation failed for 'Maybe\[Int\]'/
+ => 'Properly failed for bad value parameterized constraint';
+
+lives_ok sub {
+    $record->tuple_with_maybe([1,'hello']);
+} => 'Set tuple attribute without error skipping optional parameter';
+
+## Test Tuple with parameterized type
+
+lives_ok sub {
+    $record->tuple_with_param([1,'hello', [1,2,3]]);
+} => 'Set tuple attribute without error';
+
+throws_ok sub {
+    $record->tuple_with_param([1,'hello', [qw/a b c/]]);
+}, qr/Validation failed for 'ArrayRef\[Int\]'/
+ => 'Properly failed for bad value parameterized constraint';
+
+## Test dict_with_maybe
+
+lives_ok sub {
+    $record->dict_with_maybe({name=>'frith', age=>23});
+} => 'Set dict attribute without error';
+
+is $record->dict_with_maybe->{name}, 'frith'
+ => 'correct set the dict attribute name';
+
+is $record->dict_with_maybe->{age}, 23
+ => 'correct set the dict attribute age';
+ 
+throws_ok sub {
+    $record->dict_with_maybe({name=>[1,2,3], age=>'sdfsdfsd'});      
+}, qr/Validation failed for 'Str'/
+ => 'Got Expected Error for bad value in dict';
+
+throws_ok sub {
+    $record->dict_with_maybe({age=>30});      
+}, qr/Validation failed for 'Str'/
+ => 'Got Expected Error for missing named parameter';
+
+lives_ok sub {
+    $record->dict_with_maybe({name=>'usal'});
+} => 'Set dict attribute without error, skipping optional';
+ 

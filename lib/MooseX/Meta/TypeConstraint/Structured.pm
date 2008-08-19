@@ -28,18 +28,13 @@ declare constraints like "ArrayRef[Int, Int, Str]" where the constraint is an
 ArrayRef of three elements and the internal constraint on the three is Int, Int
 and Str.
 
-=head1 ATTRIBUTES
+=head1 SUBTYPES
 
-This class defines the following attributes.
+The following subtypes and coercions are defined in this class.
 
-=head2 parent
+=head2 MooseX::Meta::TypeConstraint::Structured::Signature
 
-additional details on the inherited parent attribute
-
-=head2 signature
-
-This is a signature of internal contraints for the contents of the outer
-contraint container.
+This is a type constraint to normalize the incoming L</signature>.
 
 =cut
 
@@ -59,6 +54,17 @@ coerce 'MooseX::Meta::TypeConstraint::Structured::Signature',
         my %hashed_signature = map { $_ => $signature[$_] } 0..$#signature;
         \%hashed_signature;
     };
+
+=head1 ATTRIBUTES
+
+This class defines the following attributes.
+
+=head2 signature
+
+This is a signature of internal contraints for the contents of the outer
+contraint container.
+
+=cut
 
 has 'signature' => (
     is=>'ro',
