@@ -23,7 +23,7 @@ BEGIN {
             parent => find_type_constraint('ArrayRef'),
             package_defined_in => __PACKAGE__,
             signature => [map {
-				Moose::Util::TypeConstraints::find_or_parse_type_constraint ($_)
+				Moose::Util::TypeConstraints::find_or_parse_type_constraint($_)
 			} @args],
         );
     }

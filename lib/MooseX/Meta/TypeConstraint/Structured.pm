@@ -28,13 +28,19 @@ declare constraints like "ArrayRef[Int, Int, Str]" where the constraint is an
 ArrayRef of three elements and the internal constraint on the three is Int, Int
 and Str.
 
+To accomplish this, we add an attribute to the base L<Moose::Meta::TypeConstraint>
+to hold a L</signature>, which is a reference to a pattern of type constraints.
+We then override L</constraint> to check our incoming value to the attribute
+against this signature pattern.
+
 =head1 SUBTYPES
 
 The following subtypes and coercions are defined in this class.
 
 =head2 MooseX::Meta::TypeConstraint::Structured::Signature
 
-This is a type constraint to normalize the incoming L</signature>.
+This is a type constraint to normalize the incoming L</signature>.  We want
+everything as a HashRef in the end.
 
 =cut
 
