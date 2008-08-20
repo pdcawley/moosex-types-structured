@@ -58,9 +58,7 @@ contraint container.
 
 =cut
 
-has '+signature' => (
-    isa=>'ArrayRef[Moose::Meta::TypeConstraint]',
-);
+has '+signature' => (isa=>'ArrayRef[Moose::Meta::TypeConstraint]');
 
 =head2 optional_signature
 
@@ -69,11 +67,7 @@ contraint container.  These are optional constraints.
 
 =cut
 
-has 'optional_signature' => (
-    is=>'ro',
-    isa=>'ArrayRef[Moose::Meta::TypeConstraint]',
-    predicate=>'has_optional_signature',
-);
+has '+optional_signature' => (isa=>'ArrayRef[Moose::Meta::TypeConstraint]');
 
 =head1 METHODS
 

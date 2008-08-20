@@ -35,6 +35,19 @@ has 'signature' => (
     required=>1,
 );
 
+=head2 optional_signature
+
+This is a signature of internal contraints for the contents of the outer
+contraint container.  These are optional constraints.
+
+=cut
+
+has 'optional_signature' => (
+    is=>'ro',
+    isa=>'Ref',
+    predicate=>'has_optional_signature',
+);
+
 =head1 METHODS
 
 This class defines the following methods.
