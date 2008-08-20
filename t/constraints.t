@@ -1,7 +1,7 @@
 BEGIN {
 	use strict;
 	use warnings;
-	use Test::More tests=>25;
+	use Test::More tests=>30;
 	use Test::Exception;
 }
 
@@ -29,6 +29,9 @@ BEGIN {
             signature => [map {
 				_normalize_type_constraint($_);
 			} @args],
+            optional_signature => [map {
+				_normalize_type_constraint($_);
+			} @optional],
         );
     }
 
@@ -44,6 +47,9 @@ BEGIN {
             signature => {map {
 				$_ => _normalize_type_constraint($args{$_});
 			} keys %args},
+            optional_signature => {map {
+				$_ => _normalize_type_constraint($optional{$_});
+			} keys %optional},
         );
     }
 
@@ -62,6 +68,7 @@ BEGIN {
 	has 'tuple_with_param' => (is=>'rw', isa=>Tuple['Int', 'Str', 'ArrayRef[Int]']);
 	has 'tuple_with_maybe' => (is=>'rw', isa=>Tuple['Int', 'Str', 'Maybe[Int]']);
 	has 'dict_with_tuple' => (is=>'rw', isa=>Dict[key1=>'Str', key2=>Tuple['Int','Str']]);
+    has 'optional_tuple' => (is=>'rw', isa=>Tuple(['Int', 'Int'],['Int']) );
 }
 
 ## Instantiate a new test object
@@ -71,7 +78,7 @@ ok my $record = Test::MooseX::Meta::TypeConstraint::Structured->new
  
 isa_ok $record => 'Test::MooseX::Meta::TypeConstraint::Structured'
  => 'Created correct object type.';
- 
+
 ## Test Tuple type constraint
 
 lives_ok sub {
@@ -177,5 +184,24 @@ throws_ok sub {
 }, qr/Validation failed for 'Int'/
  => 'Threw error on bad constraint';
 
+## Test optional_tuple
 
+lives_ok sub {
+    $record->optional_tuple([1,2,3]);
+} => 'Set tuple attribute with optional bits';
+
+is_deeply $record->optional_tuple, [1,2,3]
+ => 'correct values set';
+ 
+lives_ok sub {
+    $record->optional_tuple([4,5]);
+} => 'Set tuple attribute withOUT optional bits';
+
+is_deeply $record->optional_tuple, [4,5]
+ => 'correct values set again';
+ 
+throws_ok sub {
+    $record->optional_tuple([1,2,'bad']);   
+}, qr/Validation failed for 'Int'/
+ => 'Properly failed for bad value in optional bit';
 

@@ -2,7 +2,6 @@ package MooseX::Meta::TypeConstraint::Structured::Positional;
 
 use Moose;
 use Moose::Meta::TypeConstraint ();
-use Moose::Util::TypeConstraints;
 
 extends 'Moose::Meta::TypeConstraint';
 with 'MooseX::Meta::TypeConstraint::Role::Structured';
@@ -10,14 +9,6 @@ with 'MooseX::Meta::TypeConstraint::Role::Structured';
 =head1 NAME
 
 MooseX::Meta::TypeConstraint::Structured::Positional - Structured Type Constraints
-
-=head1 VERSION
-
-0.01
-
-=cut
-
-our $VERSION = '0.01';
 
 =head1 DESCRIPTION
 
@@ -34,18 +25,6 @@ against this signature pattern.
 
 Positionally structured Constraints expect the internal constraints to be in
 'positioned' or ArrayRef style order.
-
-=head1 TYPES
-
-The following types are defined in this class.
-
-=head2 Moose::Meta::TypeConstraint
-
-Used to make sure we can properly validate incoming signatures.
-
-=cut
-
-class_type 'Moose::Meta::TypeConstraint';
 
 =head1 ATTRIBUTES
 
@@ -152,28 +131,6 @@ sub signature_equals {
 
     return 1;
 }
-
-=head2 equals
-
-modifier to make sure equals descends into the L</signature>
-
-=cut
-
-around 'equals' => sub {
-    my ($equals, $self, $compared_type_constraint) = @_;
-    
-    ## Make sure we are comparing typeconstraints of the same base class
-    return unless $compared_type_constraint->isa(__PACKAGE__);
-    
-    ## Make sure the base equals is also good
-    return unless $self->$equals($compared_type_constraint);
-    
-    ## Make sure the signatures match
-    return unless $self->signature_equals($compared_type_constraint);
-   
-    ## If we get this far, the two are equal
-    return 1;
-};
 
 =head1 AUTHOR
 
