@@ -1,7 +1,7 @@
 BEGIN {
 	use strict;
 	use warnings;
-	use Test::More tests=>30;
+	use Test::More tests=>35;
 	use Test::Exception;
 }
 
@@ -38,7 +38,7 @@ BEGIN {
     sub Dict {
         my ($args, $optional) = @_;
         my %args = @$args;
-        my %optional = ref $optional eq 'HASH' ? @$optional : ();
+        my %optional = ref $optional eq 'ARRAY' ? @$optional : ();
         
         return MooseX::Meta::TypeConstraint::Structured::Named->new(
             name => 'Dict',
@@ -69,6 +69,7 @@ BEGIN {
 	has 'tuple_with_maybe' => (is=>'rw', isa=>Tuple['Int', 'Str', 'Maybe[Int]']);
 	has 'dict_with_tuple' => (is=>'rw', isa=>Dict[key1=>'Str', key2=>Tuple['Int','Str']]);
     has 'optional_tuple' => (is=>'rw', isa=>Tuple(['Int', 'Int'],['Int']) );
+    has 'optional_dict' => (is=>'rw', isa=>Dict([key1=>'Int'],[key2=>'Int']) );   
 }
 
 ## Instantiate a new test object
@@ -205,3 +206,26 @@ throws_ok sub {
 }, qr/Validation failed for 'Int'/
  => 'Properly failed for bad value in optional bit';
 
+# Test optional_dict
+
+lives_ok sub {
+    $record->optional_dict({key1=>1,key2=>2});
+} => 'Set tuple attribute with optional bits';
+
+is_deeply $record->optional_dict, {key1=>1,key2=>2}
+ => 'correct values set';
+ 
+lives_ok sub {
+    $record->optional_dict({key1=>3});
+} => 'Set tuple attribute withOUT optional bits';
+
+is_deeply $record->optional_dict, {key1=>3}
+ => 'correct values set again';
+ 
+throws_ok sub {
+    $record->optional_dict({key1=>1,key2=>'bad'});   
+}, qr/Validation failed for 'Int'/
+ => 'Properly failed for bad value in optional bit';
+ 
+ 
+ 

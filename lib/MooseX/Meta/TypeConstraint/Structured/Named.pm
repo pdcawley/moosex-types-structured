@@ -82,22 +82,20 @@ sub constraint {
     my $self = shift;
     return sub {
         my %args = $self->_normalize_args(shift);
-        my @signature = keys %{$self->signature};
-        my @ptional_signature = keys %{$self->optional_signature}
-         if $self->has_optional_signature;
         
         ## First make sure all the required type constraints match        
-        while( my $type_constraint_key = shift @signature) {
-            my $type_constraint = $self->signature->{$type_constraint_key};
-            if(my $error = $type_constraint->validate($args{$type_constraint_key})) {
+        foreach my $sig_key (keys %{$self->signature}) {
+            my $type_constraint = $self->signature->{$sig_key};
+            if(my $error = $type_constraint->validate($args{$sig_key})) {
                 confess $error;
+            } else {
+                delete $args{$sig_key};
             }
-            delete $args{$type_constraint_key};
         }
         
         ## Now test the option type constraints.
-        while( my $arg_key = keys %args) {
-            my $optional_type_constraint = $self->signature->{$arg_key};
+        foreach my $arg_key (keys %args) {
+            my $optional_type_constraint = $self->optional_signature->{$arg_key};
             if(my $error = $optional_type_constraint->validate($args{$arg_key})) {
                 confess $error;
             }              

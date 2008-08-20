@@ -8,17 +8,9 @@ requires qw(_normalize_args signature_equals);
 
 MooseX::Meta::TypeConstraint::Role::Structured - Structured Type Constraints
 
-=head1 VERSION
-
-0.01
-
-=cut
-
-our $VERSION = '0.01';
-
 =head1 DESCRIPTION
 
-STUB - TBD
+This Role defines the interface and basic behavior of Structured Type Constraints.
 
 =head1 TYPES
 
@@ -66,15 +58,6 @@ has 'optional_signature' => (
 
 This class defines the following methods.
 
-=head2 _normalize_args
-
-Get arguments into a known state or die trying.  Ideally we try to make this
-into a HashRef so we can match it up with the L</signature> HashRef.
-    
-=head2 constraint
-
-The constraint is basically validating the L</signature> against the incoming
-
 =head2 equals
 
 modifier to make sure equals descends into the L</signature>
@@ -96,10 +79,6 @@ around 'equals' => sub {
     ## If we get this far, the two are equal
     return 1;
 };
-
-=head2 signature_equals
-
-Check that the signature equals another signature.
 
 =head1 AUTHOR
 
