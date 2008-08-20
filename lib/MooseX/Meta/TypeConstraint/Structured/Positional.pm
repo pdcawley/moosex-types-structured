@@ -5,6 +5,7 @@ use Moose::Meta::TypeConstraint ();
 use Moose::Util::TypeConstraints;
 
 extends 'Moose::Meta::TypeConstraint';
+with 'MooseX::Meta::TypeConstraint::Role::Structured';
 
 =head1 NAME
 
@@ -57,10 +58,8 @@ contraint container.
 
 =cut
 
-has 'signature' => (
-    is=>'ro',
+has '+signature' => (
     isa=>'ArrayRef[Moose::Meta::TypeConstraint]',
-    required=>1,
 );
 
 =head2 optional_signature
