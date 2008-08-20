@@ -10,15 +10,19 @@ BEGIN {
 
     use Moose;
     use Moose::Util::TypeConstraints;
-    use MooseX::Meta::TypeConstraint::Structured;
+    use MooseX::Meta::TypeConstraint::Structured::Named;
+    use MooseX::Meta::TypeConstraint::Structured::Positional;
 
     subtype 'MyString',
      as 'Str',
      where { $_=~m/abc/};
 
     sub Tuple {
-        my @args = @{shift @_};
-        return MooseX::Meta::TypeConstraint::Structured->new(
+        my ($args, $optional) = @_;
+        my @args = @$args;
+        my @optional = ref $optional eq 'ARRAY' ? @$optional : ();
+
+        return MooseX::Meta::TypeConstraint::Structured::Positional->new(
             name => 'Tuple',
             parent => find_type_constraint('ArrayRef'),
             package_defined_in => __PACKAGE__,
@@ -29,8 +33,11 @@ BEGIN {
     }
 
     sub Dict {
-        my %args = @{shift @_};
-        return MooseX::Meta::TypeConstraint::Structured->new(
+        my ($args, $optional) = @_;
+        my %args = @$args;
+        my %optional = ref $optional eq 'HASH' ? @$optional : ();
+        
+        return MooseX::Meta::TypeConstraint::Structured::Named->new(
             name => 'Dict',
             parent => find_type_constraint('HashRef'),
             package_defined_in => __PACKAGE__,
