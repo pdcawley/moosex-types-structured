@@ -95,8 +95,6 @@ BEGIN {
             ],        
         )
     );
-    
-    ##has 'sugered' => ();
 }
 
 ## Instantiate a new test object
@@ -283,6 +281,4 @@ throws_ok sub {
     $record->optional_dict({key1=>1,key2=>'bad'});   
 }, qr/Validation failed for 'Int'/
  => 'Properly failed for bad value in optional bit';
- 
- 
  
