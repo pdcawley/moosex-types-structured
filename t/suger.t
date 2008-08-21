@@ -3,6 +3,10 @@ BEGIN {
 	use warnings;
 	use Test::More tests=>3;
 }
+
+## This is a first pass at what the regex enhancements to
+## Moose::Util::TypeConstraints is going to look like.  Basically I copyied
+## bits and added a little more parsing ability.
  
 {
     ## Copied from Moose::Util::TypeConstraints
@@ -22,10 +26,11 @@ BEGIN {
     ## New Stuff for structured types.
     my $comma = qr{,};
     my $indirection = qr{=>};
-    my $divider_tokens = qr{ $comma | $indirection }x;
-    my $structure_divider = qr{\s* $divider_tokens \s*}x;    
+    my $divider_ops = qr{ $comma | $indirection }x;
+    my $structure_divider = qr{\s* $divider_ops \s*}x;    
     my $structure_elements = qr{ ($type $structure_divider*)+ }x;
 
+	## Addd the | $structure_elements to this.
     $any = qr{ $type | $union | $structure_elements }x;
     
     ## New Proposed methods to parse and create
