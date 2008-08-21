@@ -1,7 +1,7 @@
 BEGIN {
 	use strict;
 	use warnings;
-	use Test::More tests=>35;
+	use Test::More tests=>42;
 	use Test::Exception;
 }
 
@@ -55,7 +55,7 @@ BEGIN {
 
 	sub _normalize_type_constraint {
 		my $tc = shift @_;
-		if($tc && blessed $tc && $tc->isa('Moose::Meta::TypeConstraint')) {
+		if(defined $tc && blessed $tc && $tc->isa('Moose::Meta::TypeConstraint')) {
 			return $tc;
 		} elsif($tc) {
 			return Moose::Util::TypeConstraints::find_or_parse_type_constraint($tc);
@@ -69,7 +69,34 @@ BEGIN {
 	has 'tuple_with_maybe' => (is=>'rw', isa=>Tuple['Int', 'Str', 'Maybe[Int]']);
 	has 'dict_with_tuple' => (is=>'rw', isa=>Dict[key1=>'Str', key2=>Tuple['Int','Str']]);
     has 'optional_tuple' => (is=>'rw', isa=>Tuple(['Int', 'Int'],['Int']) );
-    has 'optional_dict' => (is=>'rw', isa=>Dict([key1=>'Int'],[key2=>'Int']) );   
+    has 'optional_dict' => (is=>'rw', isa=>Dict([key1=>'Int'],[key2=>'Int']) );
+    
+    has 'crazy' => (
+        is=>'rw',
+        isa=>Tuple(
+            ## First ArrayRef Arg is the required type constraints for the top
+            ## level Tuple.
+            [
+                'Int',
+                'MyString',
+                ## The third required element is a Dict type constraint, which
+                ## itself has two required keys and a third optional key.
+                Dict([name=>'Str',age=>'Int'],[visits=>'Int'])
+            ],
+            ## Second ArrayRef Arg defines the optional constraints for the top
+            ## level Tuple.
+            [
+                'Int',
+                ## This Tuple has one required type constraint and two optional.
+                Tuple(
+                      ['Int'],
+                      ['Int','HashRef'],
+                ),
+            ],        
+        )
+    );
+    
+    ##has 'sugered' => ();
 }
 
 ## Instantiate a new test object
@@ -79,7 +106,37 @@ ok my $record = Test::MooseX::Meta::TypeConstraint::Structured->new
  
 isa_ok $record => 'Test::MooseX::Meta::TypeConstraint::Structured'
  => 'Created correct object type.';
+ 
+## Test crazy
 
+lives_ok sub {
+    $record->crazy([1,'hello.abc.world', {name=>'John', age=>39}]);
+} => 'Set crazy attribute with no optionals used';
+
+is_deeply $record->crazy, [1, 'hello.abc.world', {name=>'John', age=>39}]
+ => 'correct values for crazy attributes no optionals';
+ 
+lives_ok sub {
+    $record->crazy([1,'hello.abc.world', {name=>'John', age=>39, visits=>10},10, [1,2,{key=>'value'}]]);
+} => 'Set crazy attribute with all optionals used';
+
+is_deeply $record->crazy, [1,'hello.abc.world', {name=>'John', age=>39, visits=>10},10, [1,2,{key=>'value'}]]
+ => 'correct values for crazy attributes all optionals';
+
+lives_ok sub {
+    $record->crazy([1,'hello.abc.world', {name=>'John', age=>39},10, [1,2]]);
+} => 'Set crazy attribute with some optionals used';
+
+throws_ok sub {
+    $record->crazy([1,'hello', 'test.xxx.test']);    
+}, qr/Validation failed for 'MyString'/
+ => 'Properly failed for bad value in crazy attribute 01';
+
+throws_ok sub {
+    $record->crazy([1,'hello.abc.world', {notname=>'John', notage=>39}]);    
+}, qr/Validation failed for 'Str'/
+ => 'Properly failed for bad value in crazy attribute 02';
+ 
 ## Test Tuple type constraint
 
 lives_ok sub {
