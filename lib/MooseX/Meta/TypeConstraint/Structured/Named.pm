@@ -10,21 +10,34 @@ with 'MooseX::Meta::TypeConstraint::Role::Structured';
 
 MooseX::Meta::TypeConstraint::Structured::Named - Structured Type Constraints
 
+=head1 SYNOPSIS
+
+The follow is example usage:
+
+    use Moose::Util::TypeConstraints;
+    use MooseX::Meta::TypeConstraint::Structured::Named;
+    
+    my %required = (key1='Str', key2=>'Int');
+    my %optional = (key3=>'Object');
+    
+    my $tc = MooseX::Meta::TypeConstraint::Structured::Named->new(
+        name => 'Dict',
+        parent => find_type_constraint('HashRef'),
+        package_defined_in => __PACKAGE__,
+        signature => {map {
+            $_ => find_type_constraint($required{$_});
+        } keys %required},
+        optional_signature => {map {
+            $_ => find_type_constraint($optional{$_});
+        } keys %optional},
+    );
+
 =head1 DESCRIPTION
 
-Structured type constraints let you assign an internal pattern of type
-constraints to a 'container' constraint.  The goal is to make it easier to
-declare constraints like "ArrayRef[Int, Int, Str]" where the constraint is an
-ArrayRef of three elements and the internal constraint on the three is Int, Int
-and Str.
-
-To accomplish this, we add an attribute to the base L<Moose::Meta::TypeConstraint>
-to hold a L</signature>, which is a reference to a pattern of type constraints.
-We then override L</constraint> to check our incoming value to the attribute
-against this signature pattern.
-
 Named structured Constraints expect the internal constraints to be in keys or
-fields similar to what we expect in a HashRef.
+fields similar to what we expect in a HashRef.  Basically, this allows you to
+easily add type constraint checks against values in the wrapping HashRef
+identified by the key name.
 
 =head1 ATTRIBUTES
 

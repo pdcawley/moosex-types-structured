@@ -1,7 +1,11 @@
 use inc::Module::Install;
 
 ## All the required meta information
-all_from 'lib/MooseX/Meta/TypeConstraint/Structured.pm';
+abstract 'Supporting structured type contraints';
+author 'John Napiorkowski <jjnapiork@cpan.org>';
+version '0.01';
+license 'perl';
+perl_version '5.8.8';
 
 ## Module dependencies
 requires 'Moose' => '0.54';
