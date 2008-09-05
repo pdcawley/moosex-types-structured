@@ -1,14 +1,16 @@
 use inc::Module::Install;
 
 ## All the required meta information
-abstract 'Supporting structured type contraints';
+name     'MooseX-Types-Structured';
+all_from 'MooseX::Types::Structured';
+abstract 'Moose Type Constraint classes for Structured Types';
 author 'John Napiorkowski <jjnapiork@cpan.org>';
 version '0.01';
 license 'perl';
 perl_version '5.8.8';
 
 ## Module dependencies
-requires 'Moose' => '0.54';
+requires 'Moose' => '0.57';
 
 ## Testing dependencies
 build_requires 'Test::More' => '0.70';
