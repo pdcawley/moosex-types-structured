@@ -151,7 +151,10 @@ sub Dict {
 
 sub _normalize_type_constraint {
 	my $tc = shift @_;
-	if(defined $tc && blessed $tc && $tc->isa('Moose::Meta::TypeConstraint')) {
+	
+	## If incoming is an object, we will assume it's something that implements
+	## what a type constraint is.  We should probably have a Role for this...
+	if(defined $tc && blessed $tc) {
 		return $tc;
 	} elsif($tc) {
 		return Moose::Util::TypeConstraints::find_or_parse_type_constraint($tc);
