@@ -27,7 +27,7 @@ BEGIN {
     
     has 'crazy' => (
         is=>'rw',
-        isa=>Tuple(
+        isa=>Tuple
             ## First ArrayRef Arg is the required type constraints for the top
             ## level Tuple.
             [
@@ -35,19 +35,19 @@ BEGIN {
                 'MyString',
                 ## The third required element is a Dict type constraint, which
                 ## itself has two required keys and a third optional key.
-                Dict([name=>'Str',age=>'Int'],[visits=>'Int'])
+                Dict
+					[name=>'Str',age=>'Int'],
+					[visits=>'Int']
             ],
             ## Second ArrayRef Arg defines the optional constraints for the top
             ## level Tuple.
             [
                 'Int',
                 ## This Tuple has one required type constraint and two optional.
-                Tuple(
-                      ['Int'],
-                      ['Int','HashRef'],
-                ),
+                Tuple
+					['Int'],
+					['Int','HashRef'],
             ],        
-        )
     );
 }
 
