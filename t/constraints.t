@@ -9,58 +9,12 @@ BEGIN {
     package Test::MooseX::Meta::TypeConstraint::Structured;
 
     use Moose;
-    use Moose::Util::TypeConstraints;
-    use MooseX::Meta::TypeConstraint::Structured::Named;
-    use MooseX::Meta::TypeConstraint::Structured::Positional;
+    use MooseX::Types::Structured qw(Tuple Dict);
+	use Moose::Util::TypeConstraints;
 
     subtype 'MyString',
      as 'Str',
      where { $_=~m/abc/};
-
-    sub Tuple {
-        my ($args, $optional) = @_;
-        my @args = @$args;
-        my @optional = ref $optional eq 'ARRAY' ? @$optional : ();
-
-        return MooseX::Meta::TypeConstraint::Structured::Positional->new(
-            name => 'Tuple',
-            parent => find_type_constraint('ArrayRef'),
-            package_defined_in => __PACKAGE__,
-            signature => [map {
-				_normalize_type_constraint($_);
-			} @args],
-            optional_signature => [map {
-				_normalize_type_constraint($_);
-			} @optional],
-        );
-    }
-
-    sub Dict {
-        my ($args, $optional) = @_;
-        my %args = @$args;
-        my %optional = ref $optional eq 'ARRAY' ? @$optional : ();
-        
-        return MooseX::Meta::TypeConstraint::Structured::Named->new(
-            name => 'Dict',
-            parent => find_type_constraint('HashRef'),
-            package_defined_in => __PACKAGE__,
-            signature => {map {
-				$_ => _normalize_type_constraint($args{$_});
-			} keys %args},
-            optional_signature => {map {
-				$_ => _normalize_type_constraint($optional{$_});
-			} keys %optional},
-        );
-    }
-
-	sub _normalize_type_constraint {
-		my $tc = shift @_;
-		if(defined $tc && blessed $tc && $tc->isa('Moose::Meta::TypeConstraint')) {
-			return $tc;
-		} elsif($tc) {
-			return Moose::Util::TypeConstraints::find_or_parse_type_constraint($tc);
-		}
-	}
 
     has 'tuple' => (is=>'rw', isa=>Tuple['Int', 'Str', 'MyString']);
     has 'dict' => (is=>'rw', isa=>Dict[name=>'Str', age=>'Int']);
@@ -68,8 +22,8 @@ BEGIN {
 	has 'tuple_with_param' => (is=>'rw', isa=>Tuple['Int', 'Str', 'ArrayRef[Int]']);
 	has 'tuple_with_maybe' => (is=>'rw', isa=>Tuple['Int', 'Str', 'Maybe[Int]']);
 	has 'dict_with_tuple' => (is=>'rw', isa=>Dict[key1=>'Str', key2=>Tuple['Int','Str']]);
-    has 'optional_tuple' => (is=>'rw', isa=>Tuple(['Int', 'Int'],['Int']) );
-    has 'optional_dict' => (is=>'rw', isa=>Dict([key1=>'Int'],[key2=>'Int']) );
+    has 'optional_tuple' => (is=>'rw', isa=>Tuple['Int', 'Int'],['Int'] );
+    has 'optional_dict' => (is=>'rw', isa=>Dict[key1=>'Int'],[key2=>'Int'] );
     
     has 'crazy' => (
         is=>'rw',
