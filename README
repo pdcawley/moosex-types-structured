@@ -1,4 +1,4 @@
-MooseX-Meta-TypeConstraint-Structured
+MooseX-Type-Structured
 
 Structured Type Constraints for Moose.  This is an extension which provides
 additional type contraint abilities for L<Moose>.
@@ -17,15 +17,15 @@ SUPPORT AND DOCUMENTATION
 After installing, you can find documentation for this module with the
 perldoc command.
 
-    perldocMooseX::Meta::TypeConstraint::Structured
+    perldoc MooseX::Type::Structured
 
 AUTHOR
 
-See L<MooseX::Meta::TypeConstraint::Structured> for more information regarding authors.
+See L<MooseX::Type::Structured> for more information regarding authors.
 
 LICENSE
 
-See L<MooseX::Meta::TypeConstraint::Structured> for the license.
+See L<MooseX::Type::Structured> for the license.
 
 =cut
 
