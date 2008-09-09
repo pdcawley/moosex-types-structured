@@ -7,7 +7,7 @@ use MooseX::Meta::TypeConstraint::Structured::Named;
 #use MooseX::Types::Moose qw();
 #use MooseX::Types -declare => [qw( Dict Tuple Optional )];
   use Sub::Exporter
-    -setup => { exports => [ qw(Dict Tuple) ] };
+    -setup => { exports => [ qw(Dict Tuple Optional) ] };
 	
 our $VERSION = '0.01';
 our $AUTHORITY = 'cpan:JJNAPIORK';
@@ -113,8 +113,12 @@ This class defines the following types and subtypes.
 
 =cut
 
-sub Tuple {
-	my ($args, $optional) = @_;
+sub Optional($) {
+    return bless {args=>shift}, 'MooseX::Types::Optional';
+}
+
+sub Tuple($) {
+	my ($args, $optional) = _normalize_args(@_);
 	my @args = @$args;
 	my @optional = ref $optional eq 'ARRAY' ? @$optional : ();
 
@@ -131,8 +135,8 @@ sub Tuple {
 	);
 }
 
-sub Dict {
-	my ($args, $optional) = @_;
+sub Dict($) {
+	my ($args, $optional) = _normalize_args(@_);
 	my %args = @$args;
 	my %optional = ref $optional eq 'ARRAY' ? @$optional : ();
 	
@@ -149,6 +153,21 @@ sub Dict {
 	);
 }
 
+sub _normalize_args {
+    my $args = shift @_;
+    confess "Structured Type Constraints can only accept an ArrayRef as arguments"
+     unless ref $args eq 'ARRAY';
+     
+    my @args = @$args;
+    my $last = pop @args;
+    
+    if(blessed $last && $last->isa('MooseX::Types::Optional')) {
+        return ([@args], $last->{args});
+    } else {
+        return ([@args, $last]);
+    }
+    
+}
 sub _normalize_type_constraint {
 	my $tc = shift @_;
 	

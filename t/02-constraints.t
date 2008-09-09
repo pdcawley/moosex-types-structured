@@ -9,7 +9,7 @@ BEGIN {
     package Test::MooseX::Meta::TypeConstraint::Structured;
 
     use Moose;
-    use MooseX::Types::Structured qw(Tuple Dict);
+    use MooseX::Types::Structured qw(Tuple Dict Optional);
 	use Moose::Util::TypeConstraints;
 
     subtype 'MyString',
@@ -22,8 +22,8 @@ BEGIN {
 	has 'tuple_with_param' => (is=>'rw', isa=>Tuple['Int', 'Str', 'ArrayRef[Int]']);
 	has 'tuple_with_maybe' => (is=>'rw', isa=>Tuple['Int', 'Str', 'Maybe[Int]']);
 	has 'dict_with_tuple' => (is=>'rw', isa=>Dict[key1=>'Str', key2=>Tuple['Int','Str']]);
-    has 'optional_tuple' => (is=>'rw', isa=>Tuple['Int', 'Int'],['Int'] );
-    has 'optional_dict' => (is=>'rw', isa=>Dict[key1=>'Int'],[key2=>'Int'] );
+    has 'optional_tuple' => (is=>'rw', isa=>Tuple['Int', 'Int', Optional['Int']] );
+    has 'optional_dict' => (is=>'rw', isa=>Dict[key1=>'Int', Optional[key2=>'Int']] );
     
     has 'crazy' => (
         is=>'rw',
@@ -35,19 +35,13 @@ BEGIN {
                 'MyString',
                 ## The third required element is a Dict type constraint, which
                 ## itself has two required keys and a third optional key.
-                Dict
-					[name=>'Str',age=>'Int'],
-					[visits=>'Int']
-            ],
-            ## Second ArrayRef Arg defines the optional constraints for the top
-            ## level Tuple.
-            [
-                'Int',
-                ## This Tuple has one required type constraint and two optional.
-                Tuple
-					['Int'],
-					['Int','HashRef'],
-            ],        
+                Dict[name=>'Str',age=>'Int', Optional[visits=>'Int']],
+                Optional[
+                    'Int',
+                    ## This Tuple has one required type constraint and two optional.
+                    Tuple['Int', Optional['Int','HashRef']],                    
+                ],
+            ],      
     );
 }
 
