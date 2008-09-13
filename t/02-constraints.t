@@ -1,7 +1,7 @@
 BEGIN {
 	use strict;
 	use warnings;
-	use Test::More tests=>42;
+	use Test::More tests=>47;
 	use Test::Exception;
 }
 
@@ -24,7 +24,8 @@ BEGIN {
 	has 'dict_with_tuple' => (is=>'rw', isa=>Dict[key1=>'Str', key2=>Tuple['Int','Str']]);
     has 'optional_tuple' => (is=>'rw', isa=>Tuple['Int', 'Int', Optional['Int']] );
     has 'optional_dict' => (is=>'rw', isa=>Dict[key1=>'Int', Optional[key2=>'Int']] );
-    
+    has 'dict_with_tuple_with_union' => (is=>'rw', isa=>Dict[key1=>'Str|Object', key2=>Tuple['Int','Str|Object']] );
+	
     has 'crazy' => (
         is=>'rw',
         isa=>Tuple
@@ -229,4 +230,28 @@ throws_ok sub {
     $record->optional_dict({key1=>1,key2=>'bad'});   
 }, qr/Validation failed for 'Int'/
  => 'Properly failed for bad value in optional bit';
+
+
+## Test dict_with_tuple_with_union: Dict[key1=>'Str|Object', key2=>Tuple['Int','Str|Object']]
+
+lives_ok sub {
+    $record->dict_with_tuple_with_union({key1=>'Hello', key2=>[1,'World']});
+} => 'Set tuple attribute without error';
+
+throws_ok sub {
+    $record->dict_with_tuple_with_union({key1=>'Hello', key2=>['World',2]});
+}, qr/Validation failed for 'Int'/
+ => 'Threw error on bad constraint';
  
+lives_ok sub {
+    $record->dict_with_tuple_with_union({key1=>$record, key2=>[1,'World']});
+} => 'Set tuple attribute without error';
+
+lives_ok sub {
+    $record->dict_with_tuple_with_union({key1=>'Hello', key2=>[1,$record]});
+} => 'Set tuple attribute without error';
+
+throws_ok sub {
+    $record->dict_with_tuple_with_union({key1=>1, key2=>['World',2]});
+}, qr/Validation failed for 'Int'/
+ => 'Threw error on bad constraint';
