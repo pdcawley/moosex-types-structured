@@ -1,15 +1,13 @@
 BEGIN {
 	use strict;
 	use warnings;
-	use Test::More tests=>4;
+	use Test::More tests=>8;
 	use Test::Exception;
 	
 	use_ok 'Moose::Util::TypeConstraints';
 	use_ok 'MooseX::Meta::TypeConstraint::Structured::Positionable';	
 }
 
-ok my $REGISTRY = Moose::Meta::TypeConstraint::Registry->new
- => 'Got a registry';
  
 my $tuple = MooseX::Meta::TypeConstraint::Structured::Positionable->new(
 		name => 'Tuple',
@@ -17,31 +15,49 @@ my $tuple = MooseX::Meta::TypeConstraint::Structured::Positionable->new(
 		parent => find_type_constraint('Ref'),
 	);
 
+Moose::Util::TypeConstraints::register_type_constraint($tuple);
 
-type('Tuple', $tuple);
+## Make sure the new type constraints have been registered
 
-
-
-
-use Data::Dump qw/dump/;
-#warn dump sort {$a cmp $b} Moose::Util::TypeConstraints::list_all_type_constraints;
+ok Moose::Util::TypeConstraints::find_type_constraint('Tuple')
+ => 'Found the Tuple Type';
 
 
 {
 	package Test::MooseX::Types::Structured::Positionable;
+	
 	use Moose;
+	use Moose::Util::TypeConstraints;
 	
-	has 'attr' => (is=>'rw', isa=>'Tuple[Int,Str,Int]');
-	
+	has 'tuple' => (is=>'rw', isa=>'Tuple[Int,Str,Int]');
 }
+
 
 ok my $positioned_obj = Test::MooseX::Types::Structured::Positionable->new,
  => 'Got a good object';
 
-## should be good
-$positioned_obj->attr([1,'hello',3]);
+ok $positioned_obj->tuple([1,'hello',3])
+ => "[1,'hello',3] properly suceeds";
 
-## should all fail
-$positioned_obj->attr([1,2,'world']);
-$positioned_obj->attr(['hello',2,3]);
-$positioned_obj->attr(['hello',2,'world']);
+throws_ok sub {
+	$positioned_obj->tuple([1,2,'world']);
+}, qr/Validation failed for 'Int' failed with value world/ => "[1,2,'world'] properly fails";
+
+throws_ok sub {
+	$positioned_obj->tuple(['hello1',2,3]);
+}, qr/Validation failed for 'Int' failed with value hello1/ => "['hello',2,3] properly fails";
+
+throws_ok sub {
+	$positioned_obj->tuple(['hello2',2,'world']);
+}, qr/Validation failed for 'Int' failed with value hello2/ => "['hello',2,'world'] properly fails";
+
+
+
+
+#ok Moose::Util::TypeConstraints::_detect_parameterized_type_constraint('HashRef[key1 => Int, key2=>Int, key3=>ArrayRef[Int]]')
+# => 'detected correctly';
+ 
+#is_deeply 
+#	[Moose::Util::TypeConstraints::_parse_parameterized_type_constraint('HashRef[key1 => Int, key2=>Int, key3=>ArrayRef[Int]]')],
+#	["HashRef", "key1", "Int", "key2", "Int", "key3", "ArrayRef[Int]"]
+# => 'Correctly parsed HashRef[key1 => Int, key2=>Int, key3=>ArrayRef[Int]]';

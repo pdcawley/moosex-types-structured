@@ -4,10 +4,10 @@ use Moose;
 use Moose::Util::TypeConstraints;
 use MooseX::Meta::TypeConstraint::Structured::Positional;
 use MooseX::Meta::TypeConstraint::Structured::Named;
-#use MooseX::Types::Moose qw();
-#use MooseX::Types -declare => [qw( Dict Tuple Optional )];
-  use Sub::Exporter
-    -setup => { exports => [ qw(Dict Tuple Optional) ] };
+
+use MooseX::Types -declare => [qw(Dict  Tuple  Optional)];
+  #use Sub::Exporter
+  #  -setup => { exports => [ qw(  Optional) ] };
 	
 our $VERSION = '0.01';
 our $AUTHORITY = 'cpan:JJNAPIORK';
@@ -113,11 +113,24 @@ This class defines the following types and subtypes.
 
 =cut
 
+use MooseX::Meta::TypeConstraint::Structured::Positionable;	
+
+my $tuple = MooseX::Meta::TypeConstraint::Structured::Positionable->new(
+		name => 'Tuple',
+		package_defined_in => __PACKAGE__,
+		parent => find_type_constraint('Ref'),
+	);
+
+Moose::Util::TypeConstraints::register_type_constraint($tuple);
+
+subtype Tuple, as 'Tuple';
+
+
 sub Optional($) {
     return bless {args=>shift}, 'MooseX::Types::Optional';
 }
 
-sub Tuple($) {
+sub TupleX($) {
 	my ($args, $optional) = _normalize_args(@_);
 	my @args = @$args;
 	my @optional = ref $optional eq 'ARRAY' ? @$optional : ();
@@ -135,7 +148,7 @@ sub Tuple($) {
 	);
 }
 
-sub Dict($) {
+sub DictX($) {
 	my ($args, $optional) = _normalize_args(@_);
 	my %args = @$args;
 	my %optional = ref $optional eq 'ARRAY' ? @$optional : ();
