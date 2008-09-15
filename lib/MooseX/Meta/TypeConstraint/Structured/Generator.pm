@@ -1,4 +1,4 @@
-package MooseX::Meta::TypeConstraint::Structured::Structurable;
+package MooseX::Meta::TypeConstraint::Structured::Generator;
 
 use strict;
 use warnings;
