@@ -5,12 +5,12 @@ BEGIN {
 	use Test::Exception;
 	
 	use_ok 'Moose::Util::TypeConstraints';
-	use_ok 'MooseX::Meta::TypeConstraint::Structured::Structurable';
+	use_ok 'MooseX::Meta::TypeConstraint::Structured::Generator';
 	use_ok 'MooseX::Meta::TypeConstraint::Structured::Positional';
 	use_ok 'MooseX::Meta::TypeConstraint::Structured::Named';
 }
 
-my $tuple = MooseX::Meta::TypeConstraint::Structured::Structurable->new(
+my $tuple = MooseX::Meta::TypeConstraint::Structured::Generator->new(
 		name => 'Tuple',
 		structured_type	=> 'MooseX::Meta::TypeConstraint::Structured::Positional',
 		package_defined_in => __PACKAGE__,
@@ -25,7 +25,7 @@ ok Moose::Util::TypeConstraints::find_type_constraint('Tuple')
  => 'Found the Tuple Type';
 
 {
-	package Test::MooseX::Types::Structured::Positionable;
+	package Test::MooseX::Types::Structured::BasicAttributes;
 	
 	use Moose;
 	use Moose::Util::TypeConstraints;
@@ -34,7 +34,7 @@ ok Moose::Util::TypeConstraints::find_type_constraint('Tuple')
 }
 
 
-ok my $positioned_obj = Test::MooseX::Types::Structured::Positionable->new,
+ok my $positioned_obj = Test::MooseX::Types::Structured::BasicAttributes->new,
  => 'Got a good object';
 
 ok $positioned_obj->tuple([1,'hello',3])

@@ -19,7 +19,8 @@ sub parse_parameter_str {
 }
 
 sub parameterize {
-	my ($self, @contained_tcs) = @_;
+	my ($self, $parameter_string) = @_;
+	my @contained_tcs = $self->parse_parameter_str($parameter_string);
 	my $tc_name = $self->name .'['. join(',', map {$_->name} @contained_tcs) .']';
 	
 	return $self->structured_type->new(
