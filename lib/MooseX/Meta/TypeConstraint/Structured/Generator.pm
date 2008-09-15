@@ -13,21 +13,21 @@ __PACKAGE__->meta->add_attribute('structured_type' => (
     predicate => 'has_structured_type',
 ));
 
-sub parse_parameter_str {
+sub _parse_type_parameter {
 	my ($self, $type_str) = @_;
-	return $self->structured_type->parse_parameter_str($type_str);
+	return $self->structured_type->_parse_type_parameter($type_str);
 }
 
 sub parameterize {
 	my ($self, $parameter_string) = @_;
-	my @contained_tcs = $self->parse_parameter_str($parameter_string);
+	my @contained_tcs = $self->_parse_type_parameter($parameter_string);
 	my $tc_name = $self->name .'['. join(',', map {$_->name} @contained_tcs) .']';
 	
 	return $self->structured_type->new(
 		name => $tc_name,
 		parent => $self->parent,
 		package_defined_in => __PACKAGE__,
-		signature => \@contained_tcs,
+		signature => \@contained_tcs, 
 	);			
 }
 

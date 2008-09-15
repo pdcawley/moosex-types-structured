@@ -3,7 +3,8 @@ package MooseX::Meta::TypeConstraint::Structured::Optional;
 use Moose;
 use Moose::Meta::TypeConstraint ();
 
-extends 'Moose::Meta::TypeConstraint';
+#extends 'Moose::Meta::TypeConstraint';
+extends 'MooseX::Meta::TypeConstraint::Structured::Positional';
 with 'MooseX::Meta::TypeConstraint::Role::Structured';
 
 =head1 NAME
@@ -51,7 +52,8 @@ and not:
 	->validate(1,'hello',[2]]);	
 
 as you might expect.  Basically it sucks up args to the length of it's declared
-type constraints.
+type constraints.  So Optional args are validated against the definition, but if
+they are missing this does not cause a validation error.
 
 Please keep in mind the type constraint names given in this example are for
 example use only and any similarity between them, actual Type Constraints and
@@ -67,11 +69,11 @@ This is the type constraint that contains the Optional parameters.
 
 =cut
 
-has 'containing_type_constraint' => (
-	is=>'ro', 
-	does=>'MooseX::Meta::TypeConstraint::Role::Structured',
-	required=>1,
-);
+#has 'containing_type_constraint' => (
+#	is=>'ro', 
+#	does=>'MooseX::Meta::TypeConstraint::Role::Structured',
+#	required=>1,
+#);
 
 =head2 signature
 
@@ -94,9 +96,9 @@ delegated to the containing class (L</containing_type_constraint>).
 
 =cut
 
-sub _normalize_args {
-    return shift->containing_type_constraint->_normalize_args(@_);
-}
+#sub _normalize_args {
+#    return shift->containing_type_constraint->_normalize_args(@_);
+#}
     
 =head2 constraint
 
@@ -104,11 +106,12 @@ The constraint is basically validating the L</signature> against the incoming
 
 =cut
 
-sub constraint {
-     return shift->containing_type_constraint->constraint(@_);
-}
+#sub constraint {
+#	return 1;
+ #   return shift->containing_type_constraint->constraint(@_);
+#}
 
-=head2 parse_parameter_str ($str)
+=head2 _parse_type_parameter ($str)
 
 Given a $string that is the parameter information part of a parameterized
 constraint, parses it for internal constraint information.  This is delegated
@@ -116,9 +119,9 @@ to the containing class.
 
 =cut
 
-sub parse_parameter_str {
-    return shift->containing_type_constraint->parse_parameter_str(@_);
-}
+#sub _parse_type_parameter {
+#    return shift->containing_type_constraint->_parse_type_parameter(@_);
+#}
 
 
 =head2 signature_equals
@@ -128,9 +131,9 @@ class.
 
 =cut
 
-sub signature_equals {
-    return shift->containing_type_constraint->signature_equals(@_);
-}
+#sub signature_equals {
+#    return shift->containing_type_constraint->signature_equals(@_);
+#}
 
 =head1 AUTHOR
 
