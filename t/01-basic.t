@@ -1,18 +1,20 @@
 BEGIN {
 	use strict;
 	use warnings;
-	use Test::More tests=>8;
+	use Test::More tests=>10;
 	use Test::Exception;
 	
 	use_ok 'Moose::Util::TypeConstraints';
-	use_ok 'MooseX::Meta::TypeConstraint::Structured::Positionable';	
+	use_ok 'MooseX::Meta::TypeConstraint::Structured::Structurable';
+	use_ok 'MooseX::Meta::TypeConstraint::Structured::Positional';
+	use_ok 'MooseX::Meta::TypeConstraint::Structured::Named';
 }
 
- 
-my $tuple = MooseX::Meta::TypeConstraint::Structured::Positionable->new(
+my $tuple = MooseX::Meta::TypeConstraint::Structured::Structurable->new(
 		name => 'Tuple',
+		structured_type	=> 'MooseX::Meta::TypeConstraint::Structured::Positional',
 		package_defined_in => __PACKAGE__,
-		parent => find_type_constraint('Ref'),
+		parent => find_type_constraint('ArrayRef'),
 	);
 
 Moose::Util::TypeConstraints::register_type_constraint($tuple);
@@ -21,7 +23,6 @@ Moose::Util::TypeConstraints::register_type_constraint($tuple);
 
 ok Moose::Util::TypeConstraints::find_type_constraint('Tuple')
  => 'Found the Tuple Type';
-
 
 {
 	package Test::MooseX::Types::Structured::Positionable;

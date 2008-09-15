@@ -1,4 +1,4 @@
-package MooseX::Meta::TypeConstraint::Structured::Positionable;
+package MooseX::Meta::TypeConstraint::Structured::Structurable;
 
 use strict;
 use warnings;
@@ -7,35 +7,27 @@ use metaclass;
 
 use base 'Moose::Meta::TypeConstraint';
 use Moose::Util::TypeConstraints ();
-use MooseX::Meta::TypeConstraint::Structured::Positional;
 
 __PACKAGE__->meta->add_attribute('structured_type' => (
     accessor  => 'structured_type',
     predicate => 'has_structured_type',
 ));
 
-    my $comma = qr{,};
-    my $indirection = qr{=>};
-    my $divider_ops = qr{ $comma | $indirection }x;
-    my $structure_divider = qr{\s* $divider_ops \s*}x;
-
 sub parse_parameter_str {
-    my ($self, $type_str) = @_;
-	my @type_strs = split($structure_divider, $type_str);
-    return map {Moose::Util::TypeConstraints::find_or_create_isa_type_constraint($_)} @type_strs;
+	my ($self, $type_str) = @_;
+	return $self->structured_type->parse_parameter_str($type_str);
 }
 
 sub parameterize {
 	my ($self, @contained_tcs) = @_;
 	my $tc_name = $self->name .'['. join(',', map {$_->name} @contained_tcs) .']';
 	
-	return MooseX::Meta::TypeConstraint::Structured::Positional->new(
+	return $self->structured_type->new(
 		name => $tc_name,
-		parent => Moose::Util::TypeConstraints::find_type_constraint('ArrayRef'),
+		parent => $self->parent,
 		package_defined_in => __PACKAGE__,
 		signature => \@contained_tcs,
 	);			
 }
-
 
 1;

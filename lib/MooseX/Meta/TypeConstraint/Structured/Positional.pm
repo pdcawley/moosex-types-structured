@@ -117,6 +117,33 @@ sub constraint {
     };
 }
 
+=head2 parse_parameter_str ($str)
+
+Given a $string that is the parameter information part of a parameterized
+constraint, parses it for internal constraint information.  For example:
+
+	MyType[Int,Int,Str]
+
+has a parameter string of "Int,Int,Str" (whitespace will automatically be 
+removed during normalization that happens in L<Moose::Util::TypeConstraints>)
+and we need to convert that to ['Int','Int','Str'] which then has any type
+constraints converted to true objects.
+
+=cut
+
+{
+    my $comma = qr{,};
+    my $indirection = qr{=>};
+    my $divider_ops = qr{ $comma | $indirection }x;
+    my $structure_divider = qr{\s* $divider_ops \s*}x;
+
+	sub parse_parameter_str {
+		my ($class, $type_str) = @_;
+		my @type_strs = split($structure_divider, $type_str);
+		return map { Moose::Util::TypeConstraints::find_or_create_isa_type_constraint($_) } @type_strs;
+	}
+}
+
 =head2 signature_equals
 
 Check that the signature equals another signature.
