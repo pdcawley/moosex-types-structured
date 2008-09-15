@@ -5,9 +5,14 @@ use warnings;
 
 use metaclass;
 
-use base 'Moose::Meta::TypeConstraint::Parameterizable';
+use base 'Moose::Meta::TypeConstraint';
 use Moose::Util::TypeConstraints ();
 use MooseX::Meta::TypeConstraint::Structured::Positional;
+
+__PACKAGE__->meta->add_attribute('structured_type' => (
+    accessor  => 'structured_type',
+    predicate => 'has_structured_type',
+));
 
     my $comma = qr{,};
     my $indirection = qr{=>};
