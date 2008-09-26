@@ -10,21 +10,23 @@ BEGIN {
 
     use Moose;
     use MooseX::Types::Structured qw(Tuple Dict Optional);
+	use MooseX::Types::Moose qw(Int Str Object ArrayRef HashRef Maybe);
+	use MooseX::Types -declare => [qw(MyString)];
 	use Moose::Util::TypeConstraints;
 
-    subtype 'MyString',
+    subtype MyString,
      as 'Str',
      where { $_=~m/abc/};
 
-    has 'tuple' => (is=>'rw', isa=>Tuple['Int', 'Str', 'MyString']);
-    has 'dict' => (is=>'rw', isa=>Dict[name=>'Str', age=>'Int']);
-    has 'dict_with_maybe' => (is=>'rw', isa=>Dict[name=>'Str', age=>'Maybe[Int]']);	
-	has 'tuple_with_param' => (is=>'rw', isa=>Tuple['Int', 'Str', 'ArrayRef[Int]']);
-	has 'tuple_with_maybe' => (is=>'rw', isa=>Tuple['Int', 'Str', 'Maybe[Int]']);
-	has 'dict_with_tuple' => (is=>'rw', isa=>Dict[key1=>'Str', key2=>Tuple['Int','Str']]);
-    has 'optional_tuple' => (is=>'rw', isa=>Tuple['Int', 'Int', Optional['Int']] );
-    has 'optional_dict' => (is=>'rw', isa=>Dict[key1=>'Int', Optional[key2=>'Int']] );
-    has 'dict_with_tuple_with_union' => (is=>'rw', isa=>Dict[key1=>'Str|Object', key2=>Tuple['Int','Str|Object']] );
+    has 'tuple' => (is=>'rw', isa=>Tuple[Int, Str, MyString]);
+    has 'dict' => (is=>'rw', isa=>Dict[name=>Str, age=>Int]);
+    has 'dict_with_maybe' => (is=>'rw', isa=>Dict[name=>Str, age=>Maybe[Int]]);	
+	has 'tuple_with_param' => (is=>'rw', isa=>Tuple[Int, Str, ArrayRef[Int]]);
+	has 'tuple_with_maybe' => (is=>'rw', isa=>Tuple[Int, Str, Maybe[Int]]);
+	has 'dict_with_tuple' => (is=>'rw', isa=>Dict[key1=>Str, key2=>Tuple[Int,Str]]);
+    has 'optional_tuple' => (is=>'rw', isa=>Tuple[Int, Int, Optional[Int]] );
+    has 'optional_dict' => (is=>'rw', isa=>Dict[key1=>Int, Optional[key2=>Int]] );
+    has 'dict_with_tuple_with_union' => (is=>'rw', isa=>Dict[key1=>Str|Object, key2=>Tuple[Int,Str|Object]] );
 	
     has 'crazy' => (
         is=>'rw',
@@ -32,15 +34,15 @@ BEGIN {
             ## First ArrayRef Arg is the required type constraints for the top
             ## level Tuple.
             [
-                'Int',
-                'MyString',
+                Int,
+                MyString,
                 ## The third required element is a Dict type constraint, which
                 ## itself has two required keys and a third optional key.
-                Dict[name=>'Str',age=>'Int', Optional[visits=>'Int']],
+                Dict[name=>Str,age=>Int, Optional[visits=>Int]],
                 Optional[
-                    'Int',
+                    Int,
                     ## This Tuple has one required type constraint and two optional.
-                    Tuple['Int', Optional['Int','HashRef']],                    
+                    Tuple[Int, Optional[Int,HashRef]],                    
                 ],
             ],      
     );

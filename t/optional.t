@@ -1,90 +1,108 @@
 BEGIN {
 	use strict;
 	use warnings;
-	use Test::More tests=>37;
+	use Test::More tests=>16;
 	use Test::Exception;
+	use Data::Dump qw/dump/;
 	
 	use_ok 'Moose::Util::TypeConstraints';
-	use_ok 'MooseX::Meta::TypeConstraint::Structured::Generator';
-	use_ok 'MooseX::Meta::TypeConstraint::Structured::Positional';
-	use_ok 'MooseX::Meta::TypeConstraint::Structured::Optional';	
-	use_ok 'MooseX::Meta::TypeConstraint::Structured::Named';
 }
 
-my $optional = MooseX::Meta::TypeConstraint::Structured::Generator->new(
-		name => 'Optional',
-		structured_type	=> 'MooseX::Meta::TypeConstraint::Structured::Optional',
+Moose::Util::TypeConstraints::register_type_constraint(
+	Moose::Meta::TypeConstraint::Parameterizable->new(
+		name  => 'Optional',
 		package_defined_in => __PACKAGE__,
-		parent => find_type_constraint('ArrayRef'),
-	);
+		parent => find_type_constraint('Item'),
+		constraint => sub { 1 },
+		constraint_generator => sub {
+			my $type_parameter = shift;
+			my $check = $type_parameter->_compiled_type_constraint;
+			return sub {
+				use Data::Dump qw/dump/;
+				warn dump @_;
+				return 1 if not(defined($_)) || $check->($_);
+				return;
+			}
+		}
+	)
+);
 
-my $tuple = MooseX::Meta::TypeConstraint::Structured::Generator->new(
-		name => 'Tuple',
-		structured_type	=> 'MooseX::Meta::TypeConstraint::Structured::Positional',
-		package_defined_in => __PACKAGE__,
-		parent => find_type_constraint('ArrayRef'),
-	);
-	
-my $dict = MooseX::Meta::TypeConstraint::Structured::Generator->new(
-		name => 'Dict',
-		structured_type	=> 'MooseX::Meta::TypeConstraint::Structured::Named',
-		package_defined_in => __PACKAGE__,
-		parent => find_type_constraint('HashRef'),
-	);
-
-Moose::Util::TypeConstraints::register_type_constraint($optional);
-Moose::Util::TypeConstraints::register_type_constraint($tuple);
-Moose::Util::TypeConstraints::register_type_constraint($dict);
-
-## Make sure the new type constraints have been registered
-
-ok Moose::Util::TypeConstraints::find_type_constraint('Tuple')
- => 'Found the Tuple Type';
- 
-ok Moose::Util::TypeConstraints::find_type_constraint('Dict')
- => 'Found the Tuple Type';
- 
 ok Moose::Util::TypeConstraints::find_type_constraint('Optional')
- => 'Found the Tuple Type';
+ => 'Found the Optional Type';
 
 {
-	package Test::MooseX::Types::Structured::BasicAttributes;
-	
+	package Test::MooseX::Types::Optional;
 	use Moose;
-	use Moose::Util::TypeConstraints;
 	
-	has 'tuple' => (is=>'rw', isa=>'Tuple[Int,Str,Int]');
-	has 'tuple_with_parameterized' => (is=>'rw', isa=>'Tuple[Int,Str,Int,ArrayRef[Int]]');
-	has 'tuple_with_optional' => (is=>'rw', isa=>'Tuple[Int,Str,Int,Optional[Int,Int]]');
-	has 'tuple_with_union' => (is=>'rw', isa=>'Tuple[Int,Str,Int|Object,Optional[Int|Object,Int]]');
-	
-	has 'dict' => (is=>'rw', isa=>'Dict[name=>Str,age=>Int]');
-	has 'dict_with_parameterized' => (is=>'rw', isa=>'Dict[name=>Str, age=>Int, telephone=>ArrayRef[Int]]');
-	has 'dict_with_optional' => (is=>'rw', isa=>'Dict[name=>Str, age=>Int, Optional[opt1=>Str,opt2=>Object]]');
-
+	has 'Maybe_Int' => (is=>'rw', isa=>'Maybe[Int]');
+	has 'Maybe_ArrayRef' => (is=>'rw', isa=>'Maybe[ArrayRef]');	
+	has 'Maybe_HashRef' => (is=>'rw', isa=>'Maybe[HashRef]');	
+	has 'Maybe_ArrayRefInt' => (is=>'rw', isa=>'Maybe[ArrayRef[Int]]');	
+	has 'Maybe_HashRefInt' => (is=>'rw', isa=>'Maybe[HashRef[Int]]');	
 }
 
+ok my $obj = Test::MooseX::Types::Optional->new
+ => 'Create good test object';
 
-ok my $obj = Test::MooseX::Types::Structured::BasicAttributes->new,
- => 'Got a good object';
+##  Maybe[Int]
 
-ok Moose::Util::TypeConstraints::find_type_constraint('Tuple[Int,Str,Int]')
- => 'Found expected type constraint';
+ok my $Maybe_Int  = Moose::Util::TypeConstraints::find_or_parse_type_constraint('Maybe[Int]')
+ => 'made TC Maybe[Int]';
+ 
+ok $Maybe_Int->check(1)
+ => 'passed (1)';
+ 
+	ok $obj->Maybe_Int(1)
+	 => 'assigned (1)';
+ 
+ok $Maybe_Int->check()
+ => 'passed ()';
 
-ok Moose::Util::TypeConstraints::find_type_constraint('Tuple[Int,Str,Int,Optional[Int,Int]]')
- => 'Found expected type constraint';
- 
-## dict Dict[name=>Str, Age=>Int]
+	ok $obj->Maybe_Int()
+	 => 'assigned ()';
 
-ok $obj->dict({name=>'John', age=>39})
- => 'Dict[name=>Str, Age=>Int] properly succeeds';
+ok $Maybe_Int->check(0)
+ => 'passed (0)';
+
+	ok defined $obj->Maybe_Int(0)
+	 => 'assigned (0)';
  
+ok $Maybe_Int->check(undef)
+ => 'passed (undef)';
  
+	ok sub {$obj->Maybe_Int(undef); 1}->()
+	 => 'assigned (undef)';
  
+ok !$Maybe_Int->check("")
+ => 'failed ("")';
  
+	throws_ok sub { $obj->Maybe_Int("") }, 
+	 qr/Attribute \(Maybe_Int\) does not pass the type constraint/
+	 => 'failed assigned ("")';
+
+ok !$Maybe_Int->check("a")
+ => 'failed ("a")';
+
+	throws_ok sub { $obj->Maybe_Int("a") }, 
+	 qr/Attribute \(Maybe_Int\) does not pass the type constraint/
+	 => 'failed assigned ("a")';
+
+__END__
+
+
+ok $obj->Maybe_Int(undef)
+ => 'passed 1';
  
+ok $obj->Maybe_Int();
  
-## Test tuple (Tuple[Int,Str,Int])
+ok $obj->Maybe_Int('')
+ => 'passed 1';
+
+ok $obj->Maybe_Int('a')
+ => 'passed 1';
+
+
+
 
 ok $obj->tuple([1,'hello',3])
  => "[1,'hello',3] properly suceeds";

@@ -94,12 +94,8 @@ sub constraint {
     return sub {
         my @args = $self->_normalize_args(shift);
         my @signature = @{$self->signature};
-        my @optional_signature;
-        
-        if($signature[-1]->isa('MooseX::Meta::TypeConstraint::Structured::Optional')) {
-            my $optional = pop @signature;
-            @optional_signature = @{$optional->signature};
-        }
+		my @optional_signature = @{$self->optional_signature}
+		if $self->has_optional_signature; 
         
         ## First make sure all the required type constraints match        
         while( my $type_constraint = shift @signature) {
@@ -122,55 +118,6 @@ sub constraint {
         ## If we got this far we passed!
         return 1;
     };
-}
-
-=head2 _parse_type_parameter ($str)
-
-Given a $string that is the parameter information part of a parameterized
-constraint, parses it for internal constraint information.  For example:
-
-	MyType[Int,Int,Str]
-
-has a parameter string of "Int,Int,Str" (whitespace will automatically be 
-removed during normalization that happens in L<Moose::Util::TypeConstraints>)
-and we need to convert that to ['Int','Int','Str'] which then has any type
-constraints converted to true objects.
-
-=cut
-
-{
-    use re "eval";
-
-    my $any;
-    my $valid_chars = qr{[\w:]};
-    my $type_atom   = qr{ $valid_chars+ };
-    
-    my $type                = qr{  $valid_chars+  (?: \[  (??{$any})  \] )? }x;
-    my $type_capture_parts  = qr{ ($valid_chars+) (?: \[ ((??{$any})) \] )? }x;
-    my $type_with_parameter = qr{  $valid_chars+      \[  (??{$any})  \]    }x;
-    
-    my $op_union = qr{ \s* \| \s* }x;
-    my $union    = qr{ $type (?: $op_union $type )+ }x;
-    
-    ## New Stuff for structured types.
-    my $comma = qr{,};
-    my $indirection = qr{=>};
-    my $divider_ops = qr{ $comma | $indirection }x;
-    my $structure_divider = qr{\s* $divider_ops \s*}x;    
-    my $structure_elements = qr{ $valid_chars+ $structure_divider $type | $union }x;
-
-    $any = qr{  $union | $structure_elements+ | $type }x;
-
-	sub _parse_type_parameter {
-		my ($class, $type_str) = @_;
-        {
-            $any;
-            my @type_strs = ($type_str=~m/$union | $type/gx);
-            return map {
-                Moose::Util::TypeConstraints::find_or_create_type_constraint($_);
-            } @type_strs;
-        }
-	}
 }
 
 =head2 signature_equals

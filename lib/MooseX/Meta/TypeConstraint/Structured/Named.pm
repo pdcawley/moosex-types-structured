@@ -95,12 +95,6 @@ sub constraint {
     my $self = shift;
     return sub {
         my %args = $self->_normalize_args(shift);
-        my @optional_signature;
-        
-        if($signature[-1]->isa('MooseX::Meta::TypeConstraint::Structured::Optional')) {
-            my $optional = pop @signature;
-            @optional_signature = @{$optional->signature};
-        }
         
         ## First make sure all the required type constraints match        
         foreach my $sig_key (keys %{$self->signature}) {

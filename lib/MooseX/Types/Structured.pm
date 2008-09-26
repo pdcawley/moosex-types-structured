@@ -134,11 +134,12 @@ sub Tuple($) {
 		} @optional],
 	);
 }
-
+use Data::Dump qw/dump/;
 sub Dict($) {
 	my ($args, $optional) = _normalize_args(@_);
 	my %args = @$args;
 	my %optional = ref $optional eq 'ARRAY' ? @$optional : ();
+	
 	
 	return MooseX::Meta::TypeConstraint::Structured::Named->new(
 		name => 'Dict',
@@ -148,7 +149,13 @@ sub Dict($) {
 			$_ => _normalize_type_constraint($args{$_});
 		} keys %args},
 		optional_signature => {map {
+
+			warn dump $_;
+			warn dump $optional{$_};
+			warn dump _normalize_type_constraint($optional{$_});
+			
 			$_ => _normalize_type_constraint($optional{$_});
+			
 		} keys %optional},
 	);
 }
@@ -169,8 +176,8 @@ sub _normalize_args {
     
 }
 sub _normalize_type_constraint {
-	my $tc = shift @_;
-	
+	my ($tc) = @_;
+		
 	## If incoming is an object, we will assume it's something that implements
 	## what a type constraint is.  We should probably have a Role for this...
 	if(defined $tc && blessed $tc) {
