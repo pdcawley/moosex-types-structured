@@ -1,191 +1,43 @@
-BEGIN {
-	use strict;
-	use warnings;
-	use Test::More tests=>37;
-	use Test::Exception;
-	
-	use_ok 'Moose::Util::TypeConstraints';
-	use_ok 'MooseX::Meta::TypeConstraint::Structured::Generator';
-	use_ok 'MooseX::Meta::TypeConstraint::Structured::Positional';
-	use_ok 'MooseX::Meta::TypeConstraint::Structured::Optional';	
-	use_ok 'MooseX::Meta::TypeConstraint::Structured::Named';
-}
+use strict;
+use warnings;
 
-my $optional = MooseX::Meta::TypeConstraint::Structured::Generator->new(
-		name => 'Optional',
-		structured_type	=> 'MooseX::Meta::TypeConstraint::Structured::Optional',
-		package_defined_in => __PACKAGE__,
-		parent => find_type_constraint('ArrayRef'),
-	);
+use Test::More tests=>14;
 
-my $tuple = MooseX::Meta::TypeConstraint::Structured::Generator->new(
-		name => 'Tuple',
-		structured_type	=> 'MooseX::Meta::TypeConstraint::Structured::Positional',
-		package_defined_in => __PACKAGE__,
-		parent => find_type_constraint('ArrayRef'),
-	);
-	
-my $dict = MooseX::Meta::TypeConstraint::Structured::Generator->new(
-		name => 'Dict',
-		structured_type	=> 'MooseX::Meta::TypeConstraint::Structured::Named',
-		package_defined_in => __PACKAGE__,
-		parent => find_type_constraint('HashRef'),
-	);
+use_ok 'MooseX::Meta::TypeConstraint::Structured';
+use_ok 'Moose::Util::TypeConstraints';
 
-Moose::Util::TypeConstraints::register_type_constraint($optional);
-Moose::Util::TypeConstraints::register_type_constraint($tuple);
-Moose::Util::TypeConstraints::register_type_constraint($dict);
+ok my $int = find_type_constraint('Int') => 'Got Int';
+ok my $str = find_type_constraint('Str') => 'Got Str';
+ok my $arrayref = find_type_constraint('ArrayRef') => 'Got ArrayRef';
 
-## Make sure the new type constraints have been registered
+my $list_tc = MooseX::Meta::TypeConstraint::Structured->new(
+    name => 'list_tc',
+    parent => $arrayref,
+    type_constraints => [$int, $str],
+    constraint_generator=> sub {
+        my @type_constraints = @{shift @_};            
+        my @values = @{shift @_};
 
-ok Moose::Util::TypeConstraints::find_type_constraint('Tuple')
- => 'Found the Tuple Type';
- 
-ok Moose::Util::TypeConstraints::find_type_constraint('Dict')
- => 'Found the Tuple Type';
- 
-ok Moose::Util::TypeConstraints::find_type_constraint('Optional')
- => 'Found the Tuple Type';
+        while(my $type_constraint = shift @type_constraints) {
+            my $value = shift @values || return;
+            $type_constraint->check($value) || return;
+        }
+        if(@values) {
+            return;
+        } else {
+            return 1;
+        }
+    }
+);
 
-{
-	package Test::MooseX::Types::Structured::BasicAttributes;
-	
-	use Moose;
-	use Moose::Util::TypeConstraints;
-	
-	has 'tuple' => (is=>'rw', isa=>'Tuple[Int,Str,Int]');
-	has 'tuple_with_parameterized' => (is=>'rw', isa=>'Tuple[Int,Str,Int,ArrayRef[Int]]');
-	has 'tuple_with_optional' => (is=>'rw', isa=>'Tuple[Int,Str,Int,Optional[Int,Int]]');
-	has 'tuple_with_union' => (is=>'rw', isa=>'Tuple[Int,Str,Int|Object,Optional[Int|Object,Int]]');
-	
-	has 'dict' => (is=>'rw', isa=>'Dict[name=>Str,age=>Int]');
-	has 'dict_with_parameterized' => (is=>'rw', isa=>'Dict[name=>Str, age=>Int, telephone=>ArrayRef[Int]]');
-	has 'dict_with_optional' => (is=>'rw', isa=>'Dict[name=>Str, age=>Int, Optional[opt1=>Str,opt2=>Object]]');
+isa_ok $list_tc, 'MooseX::Meta::TypeConstraint::Structured';
 
-}
+ok !$arrayref->check() => 'Parent undef fails';
+ok !$list_tc->check() => 'undef fails';
+ok !$list_tc->check(1) => '1 fails';
+ok !$list_tc->check([]) => '[] fails';
+ok !$list_tc->check([1]) => '[1] fails';
+ok !$list_tc->check([1,2,3]) => '[1,2,3] fails';
+ok !$list_tc->check(['a','b']) => '["a","b"] fails';
 
-
-ok my $obj = Test::MooseX::Types::Structured::BasicAttributes->new,
- => 'Got a good object';
-
-ok Moose::Util::TypeConstraints::find_type_constraint('Tuple[Int,Str,Int]')
- => 'Found expected type constraint';
-
-ok Moose::Util::TypeConstraints::find_type_constraint('Tuple[Int,Str,Int,Optional[Int,Int]]')
- => 'Found expected type constraint';
- 
-## dict Dict[name=>Str, Age=>Int]
-
-ok $obj->dict({name=>'John', age=>39})
- => 'Dict[name=>Str, Age=>Int] properly succeeds';
- 
- 
- 
- 
- 
- 
-## Test tuple (Tuple[Int,Str,Int])
-
-ok $obj->tuple([1,'hello',3])
- => "[1,'hello',3] properly suceeds";
-
-throws_ok sub {
-	$obj->tuple([1,2,'world']);
-}, qr/Validation failed for 'Int' failed with value world/ => "[1,2,'world'] properly fails";
-
-throws_ok sub {
-	$obj->tuple(['hello1',2,3]);
-}, qr/Validation failed for 'Int' failed with value hello1/ => "['hello',2,3] properly fails";
-
-throws_ok sub {
-	$obj->tuple(['hello2',2,'world']);
-}, qr/Validation failed for 'Int' failed with value hello2/ => "['hello',2,'world'] properly fails";
-
-
-## Test tuple_with_parameterized (Tuple[Int,Str,Int,ArrayRef[Int]])
-
-ok $obj->tuple_with_parameterized([1,'hello',3,[1,2,3]])
- => "[1,'hello',3,[1,2,3]] properly suceeds";
-
-throws_ok sub {
-	$obj->tuple_with_parameterized([1,2,'world']);
-}, qr/Validation failed for 'Int' failed with value world/ => "[1,2,'world'] properly fails";
-
-throws_ok sub {
-	$obj->tuple_with_parameterized(['hello1',2,3]);
-}, qr/Validation failed for 'Int' failed with value hello1/ => "['hello',2,3] properly fails";
-
-throws_ok sub {
-	$obj->tuple_with_parameterized(['hello2',2,'world']);
-}, qr/Validation failed for 'Int' failed with value hello2/ => "['hello',2,'world'] properly fails";
-
-throws_ok sub {
-	$obj->tuple_with_parameterized([1,'hello',3,[1,2,'world']]);
-}, qr/Validation failed for 'ArrayRef\[Int\]'/ => "[1,'hello',3,[1,2,'world']] properly fails";
-
-
-## Test tuple_with_optional (Tuple[Int,Str,Int,Optional[Int,Int]])
-
-ok $obj->tuple_with_optional([1,'hello',3])
- => "[1,'hello',3] properly suceeds";
-
-ok $obj->tuple_with_optional([1,'hello',3,1])
- => "[1,'hello',3,1] properly suceeds";
-
-ok $obj->tuple_with_optional([1,'hello',3,4])
- => "[1,'hello',3,4] properly suceeds";
-
-ok $obj->tuple_with_optional([1,'hello',3,4,5])
- => "[1,'hello',3,4,5] properly suceeds";
-
-throws_ok sub {
-	$obj->tuple_with_optional([1,'hello',3,4,5,6]);
-}, qr/Too Many arguments for the available type constraints/ => "[1,'hello',3,4,5,6] properly fails";
-
-throws_ok sub {
-	$obj->tuple_with_optional([1,2,'world']);
-}, qr/Validation failed for 'Int' failed with value world/ => "[1,2,'world'] properly fails";
-
-throws_ok sub {
-	$obj->tuple_with_optional(['hello1',2,3]);
-}, qr/Validation failed for 'Int' failed with value hello1/ => "['hello',2,3] properly fails";
-
-throws_ok sub {
-	$obj->tuple_with_optional(['hello2',2,'world']);
-}, qr/Validation failed for 'Int' failed with value hello2/ => "['hello',2,'world'] properly fails";
-
-## tuple_with_union Tuple[Int,Str,Int|Object,Optional[Int|Object,Int]]
-
-SKIP: {
-
-	skip "Unions not supported for string parsed type constraints" => 8;
-
-	ok $obj->tuple_with_union([1,'hello',3])
-	 => "[1,'hello',3] properly suceeds";
-
-	ok $obj->tuple_with_union([1,'hello',3,1])
-	 => "[1,'hello',3,1] properly suceeds";
-
-	ok $obj->tuple_with_union([1,'hello',3,4])
-	 => "[1,'hello',3,4] properly suceeds";
-
-	ok $obj->tuple_with_union([1,'hello',3,4,5])
-	 => "[1,'hello',3,4,5] properly suceeds";
-
-	throws_ok sub {
-		$obj->tuple_with_union([1,'hello',3,4,5,6]);
-	}, qr/Too Many arguments for the available type constraints/ => "[1,'hello',3,4,5,6] properly fails";
-
-	throws_ok sub {
-		$obj->tuple_with_union([1,2,'world']);
-	}, qr/Validation failed for 'Int' failed with value world/ => "[1,2,'world'] properly fails";
-
-	throws_ok sub {
-		$obj->tuple_with_union(['hello1',2,3]);
-	}, qr/Validation failed for 'Int' failed with value hello1/ => "['hello',2,3] properly fails";
-
-	throws_ok sub {
-		$obj->tuple_with_union(['hello2',2,'world']);
-	}, qr/Validation failed for 'Int' failed with value hello2/ => "['hello',2,'world'] properly fails";
-}
-
+ok $list_tc->check([1,'a']) => '[1,"a"] passes';

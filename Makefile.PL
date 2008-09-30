@@ -10,7 +10,8 @@ license 'perl';
 perl_version '5.8.8';
 
 ## Module dependencies
-requires 'Moose' => '0.57';
+requires 'Moose' => '0.58';
+requires 'MooseX::TypeLibrary' => '';
 
 ## Testing dependencies
 build_requires 'Test::More' => '0.70';

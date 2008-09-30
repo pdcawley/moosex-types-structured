@@ -2,12 +2,9 @@ package MooseX::Types::Structured;
 
 use Moose;
 use Moose::Util::TypeConstraints;
-use MooseX::Meta::TypeConstraint::Structured::Positional;
-use MooseX::Meta::TypeConstraint::Structured::Named;
+use MooseX::Meta::TypeConstraint::Structured;
+use MooseX::Types -declare => [qw(Dict Tuple)];
 
-#use MooseX::Types -declare => [qw(Dict  Tuple  Optional)];
-use Sub::Exporter
-  -setup => { exports => [ qw( Dict  Tuple  Optional) ] };
 	
 our $VERSION = '0.01';
 our $AUTHORITY = 'cpan:JJNAPIORK';
@@ -107,95 +104,94 @@ method, granting some interesting possibilities for coercion.  Try:
 	 };
 	
 
-=head1 TYPES
+=head1 METHODS
 
-This class defines the following types and subtypes.
+This class defines the following methods
+
+=head2 type_storage
+
+Override the type_storage method so that we can inline the types.  We do this
+because if we try to say "type Dict, $dict" or similar, I found that
+L<Moose::Util::TypeConstraints> automatically wraps a L<Moose::Meta::TypeConstraint>
+object around my Structured type, which then throws an error since the base
+Type Constraint object doesn't have a parameterize method.
+
+In the future, might make all these play more nicely with Parameterized types,
+and then this nasty override can go away.
 
 =cut
 
-sub Optional($) {
-    return bless {args=>shift}, 'MooseX::Types::Optional';
-}
-
-sub Tuple($) {
-	my ($args, $optional) = _normalize_args(@_);
-	my @args = @$args;
-	my @optional = ref $optional eq 'ARRAY' ? @$optional : ();
-
-	return MooseX::Meta::TypeConstraint::Structured::Positional->new(
-		name => 'Tuple',
-		parent => find_type_constraint('ArrayRef'),
-		package_defined_in => __PACKAGE__,
-		signature => [map {
-			_normalize_type_constraint($_);
-		} @args],
-		optional_signature => [map {
-			_normalize_type_constraint($_);
-		} @optional],
-	);
-}
-use Data::Dump qw/dump/;
-sub Dict($) {
-	my ($args, $optional) = _normalize_args(@_);
-	my %args = @$args;
-	my %optional = ref $optional eq 'ARRAY' ? @$optional : ();
-	
-	
-	return MooseX::Meta::TypeConstraint::Structured::Named->new(
-		name => 'Dict',
-		parent => find_type_constraint('HashRef'),
-		package_defined_in => __PACKAGE__,
-		signature => {map {
-			$_ => _normalize_type_constraint($args{$_});
-		} keys %args},
-		optional_signature => {map {
-
-			warn dump $_;
-			warn dump $optional{$_};
-			warn dump _normalize_type_constraint($optional{$_});
-			
-			$_ => _normalize_type_constraint($optional{$_});
-			
-		} keys %optional},
-	);
-}
-
-sub _normalize_args {
-    my $args = shift @_;
-    confess "Structured Type Constraints can only accept an ArrayRef as arguments"
-     unless ref $args eq 'ARRAY';
-     
-    my @args = @$args;
-    my $last = pop @args;
-    
-    if(blessed $last && $last->isa('MooseX::Types::Optional')) {
-        return ([@args], $last->{args});
-    } else {
-        return ([@args, $last]);
-    }
-    
-}
-sub _normalize_type_constraint {
-	my ($tc) = @_;
-		
-	## If incoming is an object, we will assume it's something that implements
-	## what a type constraint is.  We should probably have a Role for this...
-	if(defined $tc && blessed $tc) {
-		return $tc;
-	} elsif($tc) {
-		return Moose::Util::TypeConstraints::find_or_parse_type_constraint($tc);
-	}
+sub type_storage {
+	return {
+		Tuple => MooseX::Meta::TypeConstraint::Structured->new(
+			name => 'Tuple',
+			parent => find_type_constraint('ArrayRef'),
+			constraint_generator=> sub {
+				## Get the constraints and values to check
+				my @type_constraints = @{shift @_};            
+				my @values = @{shift @_};
+				## Perform the checking
+				while(@type_constraints) {
+					my $type_constraint = shift @type_constraints;
+					if(@values) {
+						my $value = shift @values;
+						unless($type_constraint->check($value)) {
+							return;
+						}				
+					} else {
+						return;
+					}
+				}
+				## Make sure there are no leftovers.
+				if(@values) {
+					return;
+				} elsif(@type_constraints) {
+					return;
+				}else {
+					return 1;
+				}
+			}
+		),
+		Dict => MooseX::Meta::TypeConstraint::Structured->new(
+			name => 'Dict',
+			parent => find_type_constraint('HashRef'),
+			constraint_generator=> sub {
+				## Get the constraints and values to check
+				my %type_constraints = @{shift @_};            
+				my %values = %{shift @_};
+				## Perform the checking
+				while(%type_constraints) {
+					my($key, $type_constraint) = each %type_constraints;
+					delete $type_constraints{$key};
+					if(exists $values{$key}) {
+						my $value = $values{$key};
+						delete $values{$key};
+						unless($type_constraint->check($value)) {
+							return;
+						}
+					} else {
+						return;
+					}
+				}
+				## Make sure there are no leftovers.
+				if(%values) {
+					return;
+				} elsif(%type_constraints) {
+					return;
+				}else {
+					return 1;
+				}
+			},
+		),
+	};
 }
 
 =head1 SEE ALSO
 
 The following modules or resources may be of interest.
 
-L<Moose>, L<MooseX::TypeLibrary>, L<Moose::Meta::TypeConstraint>
-
-=head1 BUGS
-
-No known or reported bugs.
+L<Moose>, L<MooseX::TypeLibrary>, L<Moose::Meta::TypeConstraint>,
+L<MooseX::Meta::TypeConstraint::Structured>
 
 =head1 AUTHOR
 
