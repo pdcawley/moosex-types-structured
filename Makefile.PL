@@ -2,7 +2,7 @@ use inc::Module::Install;
 
 ## All the required meta information
 name     'MooseX-Types-Structured';
-all_from 'MooseX::Types::Structured';
+all_from 'lib/MooseX/Types/Structured.pm';
 abstract 'Moose Type Constraint classes for Structured Types';
 author 'John Napiorkowski <jjnapiork@cpan.org>';
 version '0.01';
