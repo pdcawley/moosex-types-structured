@@ -1,7 +1,7 @@
 BEGIN {
 	use strict;
 	use warnings;
-	use Test::More tests=>26;
+	use Test::More tests=>32;
 	use Test::Exception;
 }
 
@@ -11,11 +11,22 @@ BEGIN {
     use Moose;
     use MooseX::Types::Structured qw(Tuple);
 	use MooseX::Types::Moose qw(Int Str Object ArrayRef HashRef Maybe);
-	use MooseX::Types -declare => [qw(MyString)];
+	use MooseX::Types -declare => [qw(MyString MoreThanFive FiveByFive MyArrayRefMoreThanTwoInt)];
 	
     subtype MyString,
-     as 'Str',
+     as Str,
      where { $_=~m/abc/};
+     
+    subtype MoreThanFive,
+     as Int,
+     where { $_ > 5};
+     
+    subtype MyArrayRefMoreThanTwoInt,
+     as ArrayRef[MoreThanFive],
+     where { scalar @$_ > 2 };
+     
+    subtype FiveByFive,
+     as Tuple[MoreThanFive, MyArrayRefMoreThanTwoInt];
      
     #use Data::Dump qw/dump/; warn dump Tuple;
 
@@ -26,6 +37,7 @@ BEGIN {
 	has 'tuple_with_union' => (is=>'rw', isa=>Tuple[Int,Str,Int|Object,Int]);
 	has 'tuple2' => (is=>'rw', isa=>Tuple[Int,Str,Int]);
 	has 'tuple_with_parameterized' => (is=>'rw', isa=>Tuple[Int,Str,Int,ArrayRef[Int]]);
+    has 'FiveByFiveAttr' => (is=>'rw', isa=>FiveByFive);
 }
 
 ## Instantiate a new test object
@@ -149,3 +161,35 @@ throws_ok sub {
 	$record->tuple_with_parameterized([1,'hello',3,[1,2,'world']]);
 }, qr/Attribute \(tuple_with_parameterized\) does not pass the type constraint/
  => "[1,'hello',3,[1,2,'world']] properly fails";
+
+## Test FiveByFiveAttr
+
+lives_ok sub {
+    $record->FiveByFiveAttr([6,[7,8,9]]);
+} => 'Set FiveByFiveAttr correctly';
+
+throws_ok sub {
+    $record->FiveByFiveAttr([1,'hello', 'test']);    
+}, qr/Attribute \(FiveByFiveAttr\) does not pass the type constraint/
+ => q{Properly failed for bad value in FiveByFiveAttr [1,'hello', 'test']};
+
+throws_ok sub {
+    $record->FiveByFiveAttr([1,[8,9,10]]);    
+}, qr/Attribute \(FiveByFiveAttr\) does not pass the type constraint/
+ => q{Properly failed for bad value in FiveByFiveAttr [1,[8,9,10]]};
+ 
+throws_ok sub {
+    $record->FiveByFiveAttr([10,[11,12,0]]);    
+}, qr/Attribute \(FiveByFiveAttr\) does not pass the type constraint/
+ => q{Properly failed for bad value in FiveByFiveAttr [10,[11,12,0]]};
+ 
+throws_ok sub {
+    $record->FiveByFiveAttr([1,[1,1,0]]);    
+}, qr/Attribute \(FiveByFiveAttr\) does not pass the type constraint/
+ => q{Properly failed for bad value in FiveByFiveAttr [1,[1,1,0]]};
+
+throws_ok sub {
+    $record->FiveByFiveAttr([10,[11,12]]);    
+}, qr/Attribute \(FiveByFiveAttr\) does not pass the type constraint/
+ => q{Properly failed for bad value in FiveByFiveAttr [10,[11,12]};
+ 
