@@ -41,7 +41,8 @@ BEGIN {
     
     ## Dict key overloading
     subtype MorePersonalInfo,
-     as PersonalInfo[name=>MinFiveChars];
+    # as PersonalInfo[name=>MinFiveChars];
+     as PersonalInfo;
     
     has 'EqualLengthAttr' => (is=>'rw', isa=>EqualLength);
     has 'MoreLengthPleaseAttr' => (is=>'rw', isa=>MoreLengthPlease);
