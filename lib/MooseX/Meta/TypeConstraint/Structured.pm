@@ -71,13 +71,18 @@ Given a ref of type constraints, create a structured type.
 =cut
 
 sub parameterize {
-    my ($self, @type_constraints) = @_;
+    my ($self, @type_constraints) = @_;    
     my $name = $self->name .'['. join(',', map {"$_"} @type_constraints) .']';
+
     return __PACKAGE__->new(
         name => $name,
         parent => $self,
         type_constraints => \@type_constraints,
-        constraint_generator => $self->constraint_generator,
+        constraint_generator => $self->constraint_generator || sub {
+            my $tc = shift @_;
+            my $merged_tc = [@$tc, @{$self->parent->type_constraints}];
+            $self->constraint->($merged_tc, @_);
+        },
     );
 }
 

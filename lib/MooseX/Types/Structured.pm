@@ -108,83 +108,73 @@ method, granting some interesting possibilities for coercion.  Try:
 
 This class defines the following methods
 
-=head2 type_storage
-
-Override the type_storage method so that we can inline the types.  We do this
-because if we try to say "type Dict, $dict" or similar, I found that
-L<Moose::Util::TypeConstraints> automatically wraps a L<Moose::Meta::TypeConstraint>
-object around my Structured type, which then throws an error since the base
-Type Constraint object doesn't have a parameterize method.
-
-In the future, might make all these play more nicely with Parameterized types,
-and then this nasty override can go away.
-
 =cut
 
-sub type_storage {
-	return {
-		Tuple => MooseX::Meta::TypeConstraint::Structured->new(
-			name => 'Tuple',
-			parent => find_type_constraint('ArrayRef'),
-			constraint_generator=> sub {
-				## Get the constraints and values to check
-				my @type_constraints = @{shift @_};            
-				my @values = @{shift @_};
-				## Perform the checking
-				while(@type_constraints) {
-					my $type_constraint = shift @type_constraints;
-					if(@values) {
-						my $value = shift @values;
-						unless($type_constraint->check($value)) {
-							return;
-						}				
-					} else {
-						return;
-					}
-				}
-				## Make sure there are no leftovers.
+Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
+	MooseX::Meta::TypeConstraint::Structured->new(
+		name => "MooseX::Types::Structured::Tuple" ,
+		parent => find_type_constraint('ArrayRef'),
+		constraint_generator=> sub {
+			## Get the constraints and values to check
+			my @type_constraints = @{shift @_};            
+			my @values = @{shift @_};
+			## Perform the checking
+			while(@type_constraints) {
+				my $type_constraint = shift @type_constraints;
 				if(@values) {
+					my $value = shift @values;
+					unless($type_constraint->check($value)) {
+						return;
+					}				
+				} else {
 					return;
-				} elsif(@type_constraints) {
-					return;
-				}else {
-					return 1;
 				}
 			}
-		),
-		Dict => MooseX::Meta::TypeConstraint::Structured->new(
-			name => 'Dict',
-			parent => find_type_constraint('HashRef'),
-			constraint_generator=> sub {
-				## Get the constraints and values to check
-				my %type_constraints = @{shift @_};            
-				my %values = %{shift @_};
-				## Perform the checking
-				while(%type_constraints) {
-					my($key, $type_constraint) = each %type_constraints;
-					delete $type_constraints{$key};
-					if(exists $values{$key}) {
-						my $value = $values{$key};
-						delete $values{$key};
-						unless($type_constraint->check($value)) {
-							return;
-						}
-					} else {
+			## Make sure there are no leftovers.
+			if(@values) {
+				return;
+			} elsif(@type_constraints) {
+				return;
+			}else {
+				return 1;
+			}
+		}
+	)
+);
+	
+Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
+	MooseX::Meta::TypeConstraint::Structured->new(
+		name => "MooseX::Types::Structured::Dict",
+		parent => find_type_constraint('HashRef'),
+		constraint_generator=> sub {
+			## Get the constraints and values to check
+			my %type_constraints = @{shift @_};            
+			my %values = %{shift @_};
+			## Perform the checking
+			while(%type_constraints) {
+				my($key, $type_constraint) = each %type_constraints;
+				delete $type_constraints{$key};
+				if(exists $values{$key}) {
+					my $value = $values{$key};
+					delete $values{$key};
+					unless($type_constraint->check($value)) {
 						return;
 					}
-				}
-				## Make sure there are no leftovers.
-				if(%values) {
+				} else {
 					return;
-				} elsif(%type_constraints) {
-					return;
-				}else {
-					return 1;
 				}
-			},
-		),
-	};
-}
+			}
+			## Make sure there are no leftovers.
+			if(%values) {
+				return;
+			} elsif(%type_constraints) {
+				return;
+			}else {
+				return 1;
+			}
+		},
+	)
+);
 
 =head1 SEE ALSO
 
@@ -203,5 +193,5 @@ This program is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
-
+	
 1;

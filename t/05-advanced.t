@@ -1,7 +1,7 @@
 BEGIN {
 	use strict;
 	use warnings;
-	use Test::More tests=>12;
+	use Test::More tests=>16;
 	use Test::Exception;
 }
 
@@ -38,7 +38,7 @@ BEGIN {
     subtype MinFiveChars,
      as Str,
      where { length($_) > 5};    
-
+    
     ## Dict key overloading
     subtype MorePersonalInfo,
      as PersonalInfo[name=>MinFiveChars];
@@ -56,7 +56,7 @@ ok my $obj = Test::MooseX::Meta::TypeConstraint::Structured::Advanced->new
  
 isa_ok $obj => 'Test::MooseX::Meta::TypeConstraint::Structured::Advanced'
  => 'Created correct object type.';
- 
+  
 ## Test EqualLengthAttr
 
 lives_ok sub {
@@ -93,11 +93,11 @@ throws_ok sub {
 
 lives_ok sub {
     $obj->PersonalInfoAttr({name=>'John', stats=>[[6,7,8,9,10],[11,12,13,14,15]]});
-} => 'Set MoreLengthPleaseAttr attribute without error 1';
+} => 'Set PersonalInfoAttr attribute without error 1';
 
 lives_ok sub {
     $obj->PersonalInfoAttr({name=>'John', stats=>$obj});
-} => 'Set MoreLengthPleaseAttr attribute without error 2';
+} => 'Set PersonalInfoAttr attribute without error 2';
 
 throws_ok sub {
     $obj->PersonalInfoAttr({name=>'John', stats=>[[6,7,8,9],[11,12,13,14]]});    
@@ -109,4 +109,28 @@ throws_ok sub {
 }, qr/Attribute \(PersonalInfoAttr\) does not pass the type constraint/
  => q{PersonalInfoAttr correctly fails name=>'John', extra=>1, stats=>[[6,7,8,9,10],[11,12,13,14,15]]};
 
+## Test MorePersonalInfo
+
+lives_ok sub {
+    $obj->MorePersonalInfo({name=>'Johnnap', stats=>[[6,7,8,9,10],[11,12,13,14,15]]});
+} => 'Set MorePersonalInfo attribute without error 1';
+
+throws_ok sub {
+    $obj->MorePersonalInfo({name=>'Johnnap', stats=>[[6,7,8,9],[11,12,13,14]]});    
+}, qr/Attribute \(MorePersonalInfo\) does not pass the type constraint/
+ => q{MorePersonalInfo correctly fails name=>'Johnnap', stats=>[[6,7,8,9],[11,12,13,14]]};
+
+throws_ok sub {
+    $obj->MorePersonalInfo({name=>'Johnnap', extra=>1, stats=>[[6,7,8,9,10],[11,12,13,14,15]]});    
+}, qr/Attribute \(MorePersonalInfo\) does not pass the type constraint/
+ => q{MorePersonalInfo correctly fails name=>'Johnnap', extra=>1, stats=>[[6,7,8,9,10],[11,12,13,14,15]]};
+
+SKIP: {
+    skip 'not yet working', 1;
+    
+    throws_ok sub {
+        $obj->MorePersonalInfo({name=>'abc', stats=>[[6,7,8,9,10],[11,12,13,14,15]]});    
+    }, qr/Attribute \(MorePersonalInfo\) does not pass the type constraint/
+     => q{MorePersonalInfo correctly fails name=>'aaa', extra=>1, stats=>[[6,7,8,9,10],[11,12,13,14,15]]};   
+}
 
