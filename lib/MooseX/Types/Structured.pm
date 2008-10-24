@@ -96,14 +96,14 @@ method, granting some interesting possibilities for coercion.  Try:
 	 },
 	 from (Dict[last_name=>Str, first_name=>Str, dob=>DateTime]),
 	 via {
-		my $name = _->{first_name} .' '. $_->{last_name};
-		my $age = $_->{dob} - DateTime->now;
+		my $name = $_->{first_name} .' '. $_->{last_name};
+		my $age = DateTime->now - $_->{dob};
 		MyApp::MyStruct->new(
 			name=>$name,
 			age=>$age->years );
 	 };
 	 
-You also need to exercise some care when you try to structure a structured type
+You also need to exercise some care when you try to subtype a structured type
 as in this example:
 
 	subtype Person,
