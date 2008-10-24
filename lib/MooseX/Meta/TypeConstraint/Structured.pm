@@ -104,6 +104,30 @@ around 'compile_type_constraint' => sub {
     return $self->$compile_type_constraint(@args);
 };
 
+=head2 create_child_type
+
+modifier to make sure we get the constraint_generator
+
+=cut
+
+around 'create_child_type' => sub {
+    my ($create_child_type, $self, %opts) = @_;
+    return $self->$create_child_type(
+        %opts,
+        constraint_generator => $self->constraint_generator,
+    );
+};
+
+=head2 is_a_type_of
+
+=head2 is_subtype_of
+
+=head2 equals
+
+=head2 get_message
+
+Want to override this to set a more useful error message
+
 =head1 SEE ALSO
 
 The following modules or resources may be of interest.

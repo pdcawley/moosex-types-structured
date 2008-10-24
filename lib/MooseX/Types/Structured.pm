@@ -102,11 +102,21 @@ method, granting some interesting possibilities for coercion.  Try:
 			name=>$name,
 			age=>$age->years );
 	 };
-	
+	 
+You also need to exercise some care when you try to structure a structured type
+as in this example:
 
-=head1 METHODS
-
-This class defines the following methods
+	subtype Person,
+	 as Dict[name=>Str, age=>iIt];
+	 
+	subtype FriendlyPerson,
+	 as Person[name=>Str, age=>Int, totalFriends=>Int];
+	 
+This will actually work BUT you have to take care the the subtype has a
+structure that does not contradict the structure of it's parent.  For now the
+above works, but I will probably clarify how this works at a future point, so
+it's recommended to avoid (should not realy be needed so much anyway).  For
+now this is supported in an EXPERIMENTAL way.
 
 =cut
 

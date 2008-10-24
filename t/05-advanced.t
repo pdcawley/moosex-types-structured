@@ -41,8 +41,7 @@ BEGIN {
     
     ## Dict key overloading
     subtype MorePersonalInfo,
-    # as PersonalInfo[name=>MinFiveChars];
-     as PersonalInfo;
+     as PersonalInfo[name=>MinFiveChars, stats=>MoreLengthPlease|Object];
     
     has 'EqualLengthAttr' => (is=>'rw', isa=>EqualLength);
     has 'MoreLengthPleaseAttr' => (is=>'rw', isa=>MoreLengthPlease);
@@ -126,12 +125,9 @@ throws_ok sub {
 }, qr/Attribute \(MorePersonalInfo\) does not pass the type constraint/
  => q{MorePersonalInfo correctly fails name=>'Johnnap', extra=>1, stats=>[[6,7,8,9,10],[11,12,13,14,15]]};
 
-SKIP: {
-    skip 'not yet working', 1;
-    
-    throws_ok sub {
-        $obj->MorePersonalInfo({name=>'abc', stats=>[[6,7,8,9,10],[11,12,13,14,15]]});    
-    }, qr/Attribute \(MorePersonalInfo\) does not pass the type constraint/
-     => q{MorePersonalInfo correctly fails name=>'aaa', extra=>1, stats=>[[6,7,8,9,10],[11,12,13,14,15]]};   
-}
+throws_ok sub {
+    $obj->MorePersonalInfo({name=>'.bc', stats=>[[6,7,8,9,10],[11,12,13,14,15]]});    
+}, qr/Attribute \(MorePersonalInfo\) does not pass the type constraint/
+ => q{MorePersonalInfo correctly fails name=>'.bc', stats=>[[6,7,8,9,10],[11,12,13,14,15]]};   
+
 
