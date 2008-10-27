@@ -2,6 +2,7 @@ package MooseX::Meta::TypeConstraint::Structured;
 
 use Moose;
 use Moose::Util::TypeConstraints ();
+use MooseX::Meta::TypeCoercion::Structured;
 extends 'Moose::Meta::TypeConstraint';
 
 =head1 NAME
@@ -49,6 +50,21 @@ has 'constraint_generator' => (is=>'ro', isa=>'CodeRef');
 
 This class defines the following methods.
 
+=head2 new
+
+Initialization stuff.
+
+=cut
+
+around 'new' => sub {
+    my ($new, $class, @args)  = @_;
+    my $self = $class->$new(@args);
+    $self->coercion(MooseX::Meta::TypeCoercion::Structured->new(
+        type_constraint => $self,
+    ));
+    return $self;
+};
+
 =head2 generate_constraint_for ($type_constraints)
 
 Given some type constraints, use them to generate validation rules for an ref
@@ -71,10 +87,11 @@ Given a ref of type constraints, create a structured type.
 =cut
 
 sub parameterize {
-    my ($self, @type_constraints) = @_;    
+    my ($self, @type_constraints) = @_;
+    my $class = ref $self;
     my $name = $self->name .'['. join(',', map {"$_"} @type_constraints) .']';
 
-    return __PACKAGE__->new(
+    return $class->new(
         name => $name,
         parent => $self,
         type_constraints => \@type_constraints,
@@ -124,9 +141,56 @@ around 'create_child_type' => sub {
 
 =head2 equals
 
+Override the base class behavior.
+
+=cut
+
+sub equals {
+    my ( $self, $type_or_name ) = @_;
+    my $other = Moose::Util::TypeConstraints::find_type_constraint($type_or_name);
+
+    return unless $other->isa(__PACKAGE__);
+    
+    return (
+        $self->type_constraints_equals($other)
+            and
+        $self->parent->equals( $other->parent )
+    );
+}
+
+=head2 type_constraints_equals
+
+Checks to see if the internal type contraints are equal.
+
+=cut
+
+sub type_constraints_equals {
+    my ($self, $other) = @_;
+    my @self_type_constraints = @{$self->type_constraints||[]};
+    my @other_type_constraints = @{$other->type_constraints||[]};
+    
+    ## Incoming ay be either arrayref or hashref, need top compare both
+    while(@self_type_constraints) {
+        my $self_type_constraint = shift @self_type_constraints;
+        my $other_type_constraint = shift @other_type_constraints
+         || return; ## $other needs the same number of children.
+        
+        if( ref $self_type_constraint) {
+            $self_type_constraint->equals($other_type_constraint)
+             || return; ## type constraints obviously need top be equal
+        } else {
+            $self_type_constraint eq $other_type_constraint
+             || return; ## strings should be equal
+        }
+
+    }
+    
+    return 1; ##If we get this far, everything is good.
+}
+
 =head2 get_message
 
-Want to override this to set a more useful error message
+May want to override this to set a more useful error message
 
 =head1 SEE ALSO
 

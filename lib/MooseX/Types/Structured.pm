@@ -103,7 +103,9 @@ method, granting some interesting possibilities for coercion.  Try:
 			age=>$age->years );
 	 };
 	 
-You also need to exercise some care when you try to subtype a structured type
+=head2 Subtyping a structured subtype
+
+You need to exercise some care when you try to subtype a structured type
 as in this example:
 
 	subtype Person,
@@ -112,11 +114,61 @@ as in this example:
 	subtype FriendlyPerson,
 	 as Person[name=>Str, age=>Int, totalFriends=>Int];
 	 
-This will actually work BUT you have to take care the the subtype has a
+This will actually work BUT you have to take care that the subtype has a
 structure that does not contradict the structure of it's parent.  For now the
 above works, but I will probably clarify how this works at a future point, so
 it's recommended to avoid (should not realy be needed so much anyway).  For
-now this is supported in an EXPERIMENTAL way.
+now this is supported in an EXPERIMENTAL way.  In the future we will probably
+clarify how to augment existing structured types.
+
+=head2 Coercions
+
+Coercions currently work for 'one level' deep.  That is you can do:
+
+	subtype Person,
+     as Dict[name=>Str, age=>Int];
+
+    subtype Fullname,
+     as Dict[first=>Str, last=>Str];
+	 
+	coerce Person,
+	 from BlessedPersonObject,
+	 via { +{name=>$_->name, age=>$_->age} },
+	 from ArrayRef,
+	 via { +{name=>$_->[0], age=>$_->[1] },
+     from Dict[fullname=>Fullname, dob=>DateTime],
+     via {
+		my $age = $_->dob - DateTime->now;
+		+{
+			name=> $_->{fullname}->{first} .' '. $_->{fullname}->{last},
+			age=>$age->years
+		}
+     };
+	 
+And that should just work as expected.  However, if there are any 'inner'
+coercions, such as a coercion on 'Fullname' or on 'DateTime', that coercion
+won't currently get activated.
+
+Please see the test '07-coerce.t' for a more detailed example.
+
+=head1 TYPE CONSTRAINTS
+
+This type library defines the following constraints.
+
+=head2 Tuple[@constraints]
+
+This defines an arrayref based constraint which allows you to validate a specific
+list of constraints.  For example:
+
+	Tuple[Int,Str]; ## Validates [1,'hello']
+	Tuple[Str|Object, Int]; ##Validates ['hello', 1] or [$object, 2]
+
+=head2 Dict [%constraints]
+
+This defines a hashref based constraint which allowed you to validate a specific
+hashref.  For example:
+
+	Dict[name=>Str, age=>Int]; ## Validates {name=>'John', age=>39}
 
 =cut
 
@@ -169,6 +221,15 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 					delete $values{$key};
 					unless($type_constraint->check($value)) {
 						return;
+						#if ($type_constraint->has_coercion) {    
+						#	my $temp = $type_constraint->coerce($value);
+						#	use Data::Dump qw/dump/; warn dump $value, $temp; 
+						#	unless($type_constraint->check($temp)) {
+						#		return;
+						#	}
+						#} else {
+						#	return;
+						#}
 					}
 				} else {
 					return;
@@ -192,6 +253,10 @@ The following modules or resources may be of interest.
 
 L<Moose>, L<MooseX::TypeLibrary>, L<Moose::Meta::TypeConstraint>,
 L<MooseX::Meta::TypeConstraint::Structured>
+
+=head1 TODO
+
+Need to clarify deep coercions, need to clarify subtypes of subtypes.
 
 =head1 AUTHOR
 
