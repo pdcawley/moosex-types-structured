@@ -1,8 +1,7 @@
 BEGIN {
 	use strict;
 	use warnings;
-	use Test::More tests=>44;
-	use Test::Exception;
+	use Test::More tests=>56;
 }
 
 use MooseX::Types::Structured qw(Dict Tuple);
@@ -59,19 +58,19 @@ ok (!MyTuple2->equals(MyTuple3), 'MyTuple2 == MyTuple3');
 ok (!MyTuple3->equals(MyTuple2), 'MyTuple3 == MyTuple2');
 ok (!MyTuple3->equals(MyTuple1), 'MyTuple3 == MyTuple1');
 
-ok ( MyDict1->equals(MyDict2), '$MyDict1 == $MyDict2');
-ok ( $MyDict2->equals($MyDict1), '$MyDict2 == $MyDict1');
-ok (!$MyDict1->equals($MyDict3), '$MyDict1 == $MyDict3');
-ok (!$MyDict2->equals($MyDict3), '$MyDict2 == $MyDict3');
-ok (!$MyDict3->equals($MyDict2), '$MyDict3 == $MyDict2');
-ok (!$MyDict3->equals($MyDict1), '$MyDict3 == $MyDict1');
+ok ( MyDict1->equals(MyDict2), 'MyDict1 == MyDict2');
+ok ( MyDict2->equals(MyDict1), 'MyDict2 == MyDict1');
+ok (!MyDict1->equals(MyDict3), 'MyDict1 == MyDict3');
+ok (!MyDict2->equals(MyDict3), 'MyDict2 == MyDict3');
+ok (!MyDict3->equals(MyDict2), 'MyDict3 == MyDict2');
+ok (!MyDict3->equals(MyDict1), 'MyDict3 == MyDict1');
 
-ok ( $MyTuple1->equals($MyTuple2), '$MyTuple1 == $MyTuple2');
-ok ( $MyTuple2->equals($MyTuple1), '$MyTuple2 == $MyTuple1');
-ok (!$MyTuple1->equals($MyTuple3), '$MyTuple1 == $MyTuple3');
-ok (!$MyTuple2->equals($MyTuple3), '$MyTuple2 == $MyTuple3');
-ok (!$MyTuple3->equals($MyTuple2), '$MyTuple3 == $MyTuple2');
-ok (!$MyTuple3->equals($MyTuple1), '$MyTuple3 == $MyTuple1');
+ok ( MyTuple1->equals(MyTuple2), 'MyTuple1 == MyTuple2');
+ok ( MyTuple2->equals(MyTuple1), 'MyTuple2 == MyTuple1');
+ok (!MyTuple1->equals(MyTuple3), 'MyTuple1 == MyTuple3');
+ok (!MyTuple2->equals(MyTuple3), 'MyTuple2 == MyTuple3');
+ok (!MyTuple3->equals(MyTuple2), 'MyTuple3 == MyTuple2');
+ok (!MyTuple3->equals(MyTuple1), 'MyTuple3 == MyTuple1');
 
 ## Test is_a_type_of
 

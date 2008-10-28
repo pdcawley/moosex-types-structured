@@ -1,6 +1,7 @@
 Revision history for MooseX-Types-Structured
 
 0.02    28 October 2008
+        - cleared up some typos in the test suite
         - Fixed some POD formatting issues, mostly some dumb tabs I ended up
           with when I switched editors.  Added a bit more documentation
         
