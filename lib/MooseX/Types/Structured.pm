@@ -6,113 +6,129 @@ use MooseX::Meta::TypeConstraint::Structured;
 use MooseX::Types -declare => [qw(Dict Tuple)];
 
 	
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 our $AUTHORITY = 'cpan:JJNAPIORK';
 
 =head1 NAME
 
-MooseX::Types::Structured; Structured Type Constraints for Moose
+MooseX::Types::Structured - Structured Type Constraints for Moose
 
 =head1 SYNOPSIS
 
-The following is example usage for this module.  You can define a class that has
-an attribute with a structured type like so:
+The following is example usage for this module.
 
-	package MyApp::MyClass;
+    package MyApp::MyClass;
 	
-	use Moose;
-	use MooseX::Types::Moose qw(Str Int);
-	use MooseX::Types::Structured qw(Dict Tuple);
-	
-	has name => (isa=>Dict[first_name=>Str, last_name=>Str]);
-	
+    use Moose;
+    use MooseX::Types::Moose qw(Str Int);
+    use MooseX::Types::Structured qw(Dict Tuple);
+
+    has name => (isa=>Dict[first_name=>Str, last_name=>Str]);
+
 Then you can instantiate this class with something like:
 
-	my $instance = MyApp::MyClass->new(
+    my $instance = MyApp::MyClass->new(
 		name=>{first_name=>'John', last_name=>'Napiorkowski'},
 	);
 
 But all of these would cause an error:
 
-	my $instance = MyApp::MyClass->new(name=>'John');
-	my $instance = MyApp::MyClass->new(name=>{first_name=>'John'});
-	my $instance = MyApp::MyClass->new(name=>{first_name=>'John', age=>39});
+    my $instance = MyApp::MyClass->new(name=>'John');
+    my $instance = MyApp::MyClass->new(name=>{first_name=>'John'});
+    my $instance = MyApp::MyClass->new(name=>{first_name=>'John', age=>39});
 
 Please see the test cases for more examples.
 
 =head1 DESCRIPTION
 
-This type library enables structured type constraints. Basically, this is very
-similar to parameterized constraints that are built into the core Moose types,
+A structured type constraint is a standard container L</Moose> type constraint,
+such as an arrayref or hashref, which has been enhanced to allow you to
+explicitely name all the allow type constraints inside the structure.  The
+generalized form is:
+
+    TypeConstraint[TypeParameters]
+
+Where TypeParameters is a list of type constraints.
+
+This type library enables structured type constraints. These work in a similar
+way to parameterized constraints that are built into the core Moose types,
 except that you are allowed to define the container's entire structure.  For
 example, you could define a parameterized constraint like so:
 
-	subtype HashOfInts, as Hashref[Int];
+    subtype HashOfInts,
+     as Hashref[Int];
 
-which would constraint a value to something like [1,2,3,...] and so one.  A
-structured constraint like so:
+which would constraint a value to something like [1,2,3,...] and so on.  On the
+other hand, a structured type constrain explicitly names all it's allowed type
+parameter constraints.  For the example:
 
-	subtype StringFollowedByInt, as Tuple[Str,Int];
+    subtype StringFollowedByInt,
+     as Tuple[Str,Int];
 	
 would constrain it's value to something like ['hello', 111];
 
 These structures can be as simple or elaborate as you wish.  You can even
 combine various structured, parameterized and simple constraints all together:
 
-	subtype crazy, as Tuple[Int, Dict[name=>Str, age=>Int], ArrayRef[Int]];
+    subtype crazy,
+     as Tuple[
+        Int,
+        Dict[name=>Str, age=>Int],
+        ArrayRef[Int]
+     ];
 	
-Which would match "[1, {name=>'John', age=>25},[10,11,12]]".
+Which would match "[1, {name=>'John', age=>25},[10,11,12]]".  Please notice how
+the type parameters
 
 You should exercise some care as to whether or not your complex structured
 constraints would be better off contained by a real object as in the following
 example:
 
-	{
-		package MyApp::MyStruct;
-		use Moose;
-		
-			has $_ for qw(name age);
-		
-		package MyApp::MyClass;
-		use Moose;
-		
-			has person => (isa=>'MyApp::MyStruct');		
-	}
-
-	my $instance = MyApp::MyClass
-		->new( person=>MyApp::MyStruct->new(name=>'John', age=>39) );
+    package MyApp::MyStruct;
+    use Moose;
+    
+    has $_ for qw(name age);
+    
+    package MyApp::MyClass;
+    use Moose;
+    
+    has person => (isa=>'MyApp::MyStruct');		
+    
+    my $instance = MyApp::MyClass->new(
+        person=>MyApp::MyStruct->new(name=>'John', age=>39),
+    );
 	
 This method may take some additional time to setup but will give you more
 flexibility.  However, structured constraints are highly compatible with this
 method, granting some interesting possibilities for coercion.  Try:
 
-	subtype 'MyStruct',
-	 as 'MyApp::MyStruct';
-	 
-	coerce 'MyStruct',
-	 from (Dict[name=>Str, age=>Int]),
-	 via {
-		MyApp::MyStruct->new(%$_);
-	 },
-	 from (Dict[last_name=>Str, first_name=>Str, dob=>DateTime]),
-	 via {
-		my $name = $_->{first_name} .' '. $_->{last_name};
-		my $age = DateTime->now - $_->{dob};
-		MyApp::MyStruct->new(
-			name=>$name,
-			age=>$age->years );
-	 };
+    subtype 'MyStruct',
+     as 'MyApp::MyStruct';
+    
+    coerce 'MyStruct',
+     from (Dict[name=>Str, age=>Int]),
+     via {
+        MyApp::MyStruct->new(%$_);
+     },
+     from (Dict[last_name=>Str, first_name=>Str, dob=>DateTime]),
+     via {
+        my $name = $_->{first_name} .' '. $_->{last_name};
+        my $age = DateTime->now - $_->{dob};
+        MyApp::MyStruct->new(
+        name=>$name,
+        age=>$age->years );
+     };
 	 
 =head2 Subtyping a structured subtype
 
 You need to exercise some care when you try to subtype a structured type
 as in this example:
 
-	subtype Person,
-	 as Dict[name=>Str, age=>iIt];
+    subtype Person,
+     as Dict[name=>Str, age=>iIt];
 	 
-	subtype FriendlyPerson,
-	 as Person[name=>Str, age=>Int, totalFriends=>Int];
+    subtype FriendlyPerson,
+     as Person[name=>Str, age=>Int, totalFriends=>Int];
 	 
 This will actually work BUT you have to take care that the subtype has a
 structure that does not contradict the structure of it's parent.  For now the
@@ -125,24 +141,24 @@ clarify how to augment existing structured types.
 
 Coercions currently work for 'one level' deep.  That is you can do:
 
-	subtype Person,
+    subtype Person,
      as Dict[name=>Str, age=>Int];
-
+    
     subtype Fullname,
      as Dict[first=>Str, last=>Str];
-	 
-	coerce Person,
-	 from BlessedPersonObject,
-	 via { +{name=>$_->name, age=>$_->age} },
-	 from ArrayRef,
-	 via { +{name=>$_->[0], age=>$_->[1] },
+    
+    coerce Person,
+     from BlessedPersonObject,
+     via { +{name=>$_->name, age=>$_->age} },
+     from ArrayRef,
+     via { +{name=>$_->[0], age=>$_->[1] },
      from Dict[fullname=>Fullname, dob=>DateTime],
      via {
-		my $age = $_->dob - DateTime->now;
-		+{
-			name=> $_->{fullname}->{first} .' '. $_->{fullname}->{last},
-			age=>$age->years
-		}
+        my $age = $_->dob - DateTime->now;
+        +{
+            name=> $_->{fullname}->{first} .' '. $_->{fullname}->{last},
+            age=>$age->years
+        }
      };
 	 
 And that should just work as expected.  However, if there are any 'inner'
@@ -160,15 +176,15 @@ This type library defines the following constraints.
 This defines an arrayref based constraint which allows you to validate a specific
 list of constraints.  For example:
 
-	Tuple[Int,Str]; ## Validates [1,'hello']
-	Tuple[Str|Object, Int]; ##Validates ['hello', 1] or [$object, 2]
+    Tuple[Int,Str]; ## Validates [1,'hello']
+    Tuple[Str|Object, Int]; ##Validates ['hello', 1] or [$object, 2]
 
 =head2 Dict [%constraints]
 
 This defines a hashref based constraint which allowed you to validate a specific
 hashref.  For example:
 
-	Dict[name=>Str, age=>Int]; ## Validates {name=>'John', age=>39}
+    Dict[name=>Str, age=>Int]; ## Validates {name=>'John', age=>39}
 
 =cut
 
