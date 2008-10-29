@@ -6,7 +6,6 @@ all_from 'lib/MooseX/Types/Structured.pm';
 abstract 'Moose Type Constraint classes for Structured Types';
 author 'John Napiorkowski <jjnapiork@cpan.org>';
 license 'perl';
-perl_version '5.008008';
 
 ## Module dependencies
 requires 'Moose' => '0.60';

@@ -1,5 +1,6 @@
 package MooseX::Types::Structured;
 
+use 5.8.8;
 use Moose;
 use Moose::Util::TypeConstraints;
 use MooseX::Meta::TypeConstraint::Structured;
@@ -53,7 +54,7 @@ This type library enables structured type constraints. It is build on top of the
 L<MooseX::Types> library system, so you should review the documentation for that
 if you are not familiar with it.
 
-=head Comparing Parameterized types to Structured types
+=head2 Comparing Parameterized types to Structured types
 
 Parameterized constraints are built into the core Moose types 'HashRef' and
 'ArrayRef'.  Structured types have similar functionality, so their syntax is
