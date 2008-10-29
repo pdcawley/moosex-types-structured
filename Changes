@@ -1,5 +1,14 @@
 Revision history for MooseX-Types-Structured
 
+0.03    29 October 2008
+        - Fixed incorrect Perl version string (rafl)
+        - hide the meta classes from pause.  This should clarify which POD is
+          the right one to read and also I want to discourage people from
+          subclassing that stuff since it will probably change
+        - various documentation cleanup
+        - new test 'example.t' with runable versions of the code in the example
+          POD section.
+        
 0.02    28 October 2008
         - cleared up some typos in the test suite
         - Fixed some POD formatting issues, mostly some dumb tabs I ended up

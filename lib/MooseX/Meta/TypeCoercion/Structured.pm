@@ -1,4 +1,5 @@
-package MooseX::Meta::TypeCoercion::Structured;
+package ## Hide from PAUSE
+ MooseX::Meta::TypeCoercion::Structured;
 
 use Moose;
 extends 'Moose::Meta::TypeCoercion';

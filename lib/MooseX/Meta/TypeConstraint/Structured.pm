@@ -1,4 +1,5 @@
-package MooseX::Meta::TypeConstraint::Structured;
+package ## Hide from PAUSE
+ MooseX::Meta::TypeConstraint::Structured;
 
 use Moose;
 use Moose::Util::TypeConstraints ();

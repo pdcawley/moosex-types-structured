@@ -5,8 +5,7 @@ use Moose::Util::TypeConstraints;
 use MooseX::Meta::TypeConstraint::Structured;
 use MooseX::Types -declare => [qw(Dict Tuple)];
 
-	
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 our $AUTHORITY = 'cpan:JJNAPIORK';
 
 =head1 NAME
@@ -43,29 +42,35 @@ Please see the test cases for more examples.
 
 A structured type constraint is a standard container L</Moose> type constraint,
 such as an arrayref or hashref, which has been enhanced to allow you to
-explicitely name all the allow type constraints inside the structure.  The
+explicitly name all the allow type constraints inside the structure.  The
 generalized form is:
 
     TypeConstraint[TypeParameters]
 
 Where TypeParameters is a list of type constraints.
 
-This type library enables structured type constraints. These work in a similar
-way to parameterized constraints that are built into the core Moose types,
-except that you are allowed to define the container's entire structure.  For
-example, you could define a parameterized constraint like so:
+This type library enables structured type constraints. It is build on top of the
+L<MooseX::Types> library system, so you should review the documentation for that
+if you are not familiar with it.
+
+=head Comparing Parameterized types to Structured types
+
+Parameterized constraints are built into the core Moose types 'HashRef' and
+'ArrayRef'.  Structured types have similar functionality, so their syntax is
+likewise similar. For example, you could define a parameterized constraint like:
 
     subtype HashOfInts,
      as Hashref[Int];
 
 which would constraint a value to something like [1,2,3,...] and so on.  On the
-other hand, a structured type constrain explicitly names all it's allowed type
+other hand, a structured type constraint explicitly names all it's allowed type
 parameter constraints.  For the example:
 
     subtype StringFollowedByInt,
      as Tuple[Str,Int];
 	
-would constrain it's value to something like ['hello', 111];
+would constrain it's value to something like ['hello', 111] but ['hello', 'world']
+would fail, as well as ['hello', 111, 'world']
 
 These structures can be as simple or elaborate as you wish.  You can even
 combine various structured, parameterized and simple constraints all together:
@@ -78,7 +83,11 @@ combine various structured, parameterized and simple constraints all together:
      ];
 	
 Which would match "[1, {name=>'John', age=>25},[10,11,12]]".  Please notice how
-the type parameters
+the type parameters can be visually arranged to your liking and to improve the
+clarity of your meaning.  You don't need to run then altogether onto a single
+line.
+
+=head2 Alternatives
 
 You should exercise some care as to whether or not your complex structured
 constraints would be better off contained by a real object as in the following
@@ -107,16 +116,12 @@ method, granting some interesting possibilities for coercion.  Try:
     
     coerce 'MyStruct',
      from (Dict[name=>Str, age=>Int]),
-     via {
-        MyApp::MyStruct->new(%$_);
-     },
+     via { MyApp::MyStruct->new(%$_) },
      from (Dict[last_name=>Str, first_name=>Str, dob=>DateTime]),
      via {
         my $name = $_->{first_name} .' '. $_->{last_name};
         my $age = DateTime->now - $_->{dob};
-        MyApp::MyStruct->new(
-        name=>$name,
-        age=>$age->years );
+        MyApp::MyStruct->new( name=>$name, age=>$age->years );
      };
 	 
 =head2 Subtyping a structured subtype
@@ -132,10 +137,10 @@ as in this example:
 	 
 This will actually work BUT you have to take care that the subtype has a
 structure that does not contradict the structure of it's parent.  For now the
-above works, but I will probably clarify how this works at a future point, so
+above works, but I will clarify the syntax for this at a future point, so
 it's recommended to avoid (should not realy be needed so much anyway).  For
-now this is supported in an EXPERIMENTAL way.  In the future we will probably
-clarify how to augment existing structured types.
+now this is supported in an EXPERIMENTAL way.  Your thoughts, test cases and
+patches are welcomed for discussion.
 
 =head2 Coercions
 
@@ -185,6 +190,45 @@ This defines a hashref based constraint which allowed you to validate a specific
 hashref.  For example:
 
     Dict[name=>Str, age=>Int]; ## Validates {name=>'John', age=>39}
+
+=head1 EXAMPLES
+
+Here are some additional example usage for structured types.  All examples can
+be found also in the 't/examples.t' test.  Your contributions are also welcomed.
+
+=head2 Normalize a HashRef
+
+You need a hashref to conform to a canonical structure but are required accept a
+bunch of different incoming structures.  You can normalize using the Dict type
+constraint and coercions.  This example also shows structured types mixed which
+other MooseX::Types libraries.
+
+    package Test::MooseX::Meta::TypeConstraint::Structured::Examples::Normalize;
+    
+    use Moose;
+    use DateTime;
+    
+    use MooseX::Types::Structured qw(Dict Tuple);
+    use MooseX::Types::DateTime qw(DateTime);
+    use MooseX::Types::Moose qw(Int Str Object);
+    use MooseX::Types -declare => [qw(Name Age Person)];
+     
+    subtype Person,
+     as Dict[name=>Str, age=>Int];
+    
+    coerce Person,
+     from Dict[first=>Str, last=>Str, years=>Int],
+     via { +{
+        name => "$_->{first} $_->{last}",
+        age=>$_->{years},
+     }},
+     from Dict[fullname=>Dict[last=>Str, first=>Str], dob=>DateTime],
+     via { +{
+        name => "$_->{fullname}{first} $_->{fullname}{last}",
+        age => ($_->{dob} - 'DateTime'->now)->years,
+     }};
+     
+    has person => (is=>'rw', isa=>Person, coerce=>1);
 
 =cut
 
@@ -237,15 +281,6 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 					delete $values{$key};
 					unless($type_constraint->check($value)) {
 						return;
-						#if ($type_constraint->has_coercion) {    
-						#	my $temp = $type_constraint->coerce($value);
-						#	use Data::Dump qw/dump/; warn dump $value, $temp; 
-						#	unless($type_constraint->check($temp)) {
-						#		return;
-						#	}
-						#} else {
-						#	return;
-						#}
 					}
 				} else {
 					return;
