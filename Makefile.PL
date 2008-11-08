@@ -8,8 +8,8 @@ author 'John Napiorkowski <jjnapiork@cpan.org>';
 license 'perl';
 
 ## Module dependencies
-requires 'Moose' => '0.60';
-requires 'MooseX::Types' => '0.06';
+requires 'Moose' => '0.61';
+requires 'MooseX::Types' => '0.07';
 
 ## Testing dependencies
 build_requires 'Test::More' => '0.70';

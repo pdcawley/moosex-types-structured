@@ -1,12 +1,12 @@
 package MooseX::Types::Structured;
 
-use 5.008008;
+use 5.008;
 use Moose;
 use Moose::Util::TypeConstraints;
 use MooseX::Meta::TypeConstraint::Structured;
 use MooseX::Types -declare => [qw(Dict Tuple)];
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 our $AUTHORITY = 'cpan:JJNAPIORK';
 
 =head1 NAME

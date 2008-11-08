@@ -1,5 +1,12 @@
 Revision history for MooseX-Types-Structured
 
+0.04    07 November 2008
+        - Bumped minimum required versions of Moose and MooseX-Types to solve
+          problem with overloading and type constraint names (issue resolved
+          in Moose code.
+        - Changed the way the required Perl version string is used to increase
+          compatibility and lowered minimum required Perl
+
 0.03    29 October 2008
         - Fixed incorrect Perl version string (rafl)
         - hide the meta classes from pause.  This should clarify which POD is
