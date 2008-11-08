@@ -1,6 +1,6 @@
 package MooseX::Types::Structured;
 
-use 5.8.8;
+use 5.008008;
 use Moose;
 use Moose::Util::TypeConstraints;
 use MooseX::Meta::TypeConstraint::Structured;
