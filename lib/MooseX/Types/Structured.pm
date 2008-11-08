@@ -6,7 +6,7 @@ use Moose::Util::TypeConstraints;
 use MooseX::Meta::TypeConstraint::Structured;
 use MooseX::Types -declare => [qw(Dict Tuple)];
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 our $AUTHORITY = 'cpan:JJNAPIORK';
 
 =head1 NAME
@@ -28,14 +28,17 @@ The following is example usage for this module.
 Then you can instantiate this class with something like:
 
     my $instance = MyApp::MyClass->new(
-		name=>{first_name=>'John', last_name=>'Napiorkowski'},
-	);
+        name => {
+            first_name=>'John', 
+            last_name=>'Napiorkowski',
+        },
+    );
 
-But all of these would cause an error:
+But all of these would cause a constraint error for the 'name' attribute:
 
-    my $instance = MyApp::MyClass->new(name=>'John');
-    my $instance = MyApp::MyClass->new(name=>{first_name=>'John'});
-    my $instance = MyApp::MyClass->new(name=>{first_name=>'John', age=>39});
+    MyApp::MyClass->new( name=>'John' );
+    MyApp::MyClass->new( name=>{first_name=>'John'} );
+    MyApp::MyClass->new( name=>{first_name=>'John', age=>39} );
 
 Please see the test cases for more examples.
 
@@ -48,7 +51,8 @@ generalized form is:
 
     TypeConstraint[TypeParameters]
 
-Where TypeParameters is a list of type constraints.
+Where 'TypeParameters' is an array or hash of L</Moose::Meta::TypeConstraint> 
+type constraints.
 
 This type library enables structured type constraints. It is build on top of the
 L<MooseX::Types> library system, so you should review the documentation for that
@@ -60,8 +64,8 @@ Parameterized constraints are built into the core Moose types 'HashRef' and
 'ArrayRef'.  Structured types have similar functionality, so their syntax is
 likewise similar. For example, you could define a parameterized constraint like:
 
-    subtype HashOfInts,
-     as Hashref[Int];
+    subtype ArrayOfInts,
+     as Arrayref[Int];
 
 which would constraint a value to something like [1,2,3,...] and so on.  On the
 other hand, a structured type constraint explicitly names all it's allowed type
@@ -71,7 +75,23 @@ parameter constraints.  For the example:
      as Tuple[Str,Int];
 	
 would constrain it's value to something like ['hello', 111] but ['hello', 'world']
-would fail, as well as ['hello', 111, 'world']
+would fail, as well as ['hello', 111, 'world'] and so on.
+
+Structured Constraints are not limited to arrays.  You can define a structure
+against a hashref with 'Dict' as in this example:
+
+    subtype FirstNameLastName,
+     as Dict[firste=>Str, lastname=>Str];
+
+This would constrain a hashref to something like:
+
+    {firstname=>'Vanessa', lastname=>'Li'};
+    
+but all the following would fail validation:
+
+     {first=>'Vanessa', last=>'Li'};
+     {firstname=>'Vanessa', lastname=>'Li', middlename=>'NA'};   
+     ['Vanessa', 'Li']; 
 
 These structures can be as simple or elaborate as you wish.  You can even
 combine various structured, parameterized and simple constraints all together:
@@ -131,7 +151,7 @@ You need to exercise some care when you try to subtype a structured type
 as in this example:
 
     subtype Person,
-     as Dict[name=>Str, age=>iIt];
+     as Dict[name=>Str, age=>Int];
 	 
     subtype FriendlyPerson,
      as Person[name=>Str, age=>Int, totalFriends=>Int];
@@ -154,10 +174,13 @@ Coercions currently work for 'one level' deep.  That is you can do:
      as Dict[first=>Str, last=>Str];
     
     coerce Person,
+     ## Coerce an object of a particular class
      from BlessedPersonObject,
      via { +{name=>$_->name, age=>$_->age} },
+     ## Coerce from [$name, $age]
      from ArrayRef,
      via { +{name=>$_->[0], age=>$_->[1] },
+     ## Coerce from {fullname=>{first=>...,last=>...}, dob=>$DateTimeObject}
      from Dict[fullname=>Fullname, dob=>DateTime],
      via {
         my $age = $_->dob - DateTime->now;
