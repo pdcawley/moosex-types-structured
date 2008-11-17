@@ -5,6 +5,7 @@ use Test::More tests=>15;
 use Moose::Util::TypeConstraints;
 use Moose::Meta::TypeConstraint::Parameterizable;
 use Moose;
+use Data::Dump qw/dump/;
 
 ## Sketch for how this could work
 ok my $Optional = Moose::Meta::TypeConstraint::Parameterizable->new(
@@ -17,6 +18,10 @@ ok my $Optional = Moose::Meta::TypeConstraint::Parameterizable->new(
 		my $check = $type_parameter->_compiled_type_constraint;
 		return sub {
 			my (@args) = @_;
+			warn dump [@args];
+			warn exists $args[0]? "exists":"null";
+			warn defined $args[0]? "defined":"undef";		
+
 			if(exists($args[0])) {
 				## If it exists, we need to validate it
 				$check->($args[0]);
@@ -43,7 +48,12 @@ ok my $arrayref = Moose::Util::TypeConstraints::find_or_parse_type_constraint('A
 ok my $Optional_Int = $Optional->parameterize($int), 'Parameterized Int';
 ok my $Optional_ArrayRef = $Optional->parameterize($arrayref), 'Parameterized ArrayRef';
 
+$Optional_Int->check();
+
+die;
+
 ok $Optional_Int->check() => 'Optional is allowed to not exist';
+
 ok !$Optional_Int->check(undef) => 'Optional is NOT allowed to be undef';
 ok $Optional_Int->check(199) => 'Correctly validates 199';
 ok !$Optional_Int->check("a") => 'Correctly fails "a"';
