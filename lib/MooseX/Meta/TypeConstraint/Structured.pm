@@ -156,7 +156,7 @@ around 'create_child_type' => sub {
     my ($create_child_type, $self, %opts) = @_;
     return $self->$create_child_type(
         %opts,
-        constraint_generator => $self->constraint_generator,
+        constraint_generator => $self->__infer_constraint_generator,
     );
 };
 

@@ -6,7 +6,7 @@ use Moose::Util::TypeConstraints;
 use MooseX::Meta::TypeConstraint::Structured;
 use MooseX::Types -declare => [qw(Dict Tuple Optional)];
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 our $AUTHORITY = 'cpan:JJNAPIORK';
 
 =head1 NAME
@@ -21,16 +21,31 @@ The following is example usage for this module.
 	
     use Moose;
     use MooseX::Types::Moose qw(Str Int);
-    use MooseX::Types::Structured qw(Dict Tuple);
+    use MooseX::Types::Structured qw(Dict Optional);
 
-    has name => (isa=>Dict[first_name=>Str, last_name=>Str]);
+    ## A name has a first and last part, but middle names are not required
+    has name => (
+        isa=>Dict[
+            first=>Str,
+            last=>Str,
+            middle=>Optional[Str],
+        ],
+    );
 
 Then you can instantiate this class with something like:
 
-    my $instance = MyApp::MyClass->new(
+    my $john = MyApp::MyClass->new(
         name => {
-            first_name=>'John', 
-            last_name=>'Napiorkowski',
+            first=>'John',
+            middle=>'James'
+            last=>'Napiorkowski',
+        },
+    );
+    
+    my $vanessa = MyApp::MyClass->new(
+        name => {
+            first=>'Vanessa',
+            last=>'Li'
         },
     );
 
@@ -39,7 +54,8 @@ But all of these would cause a constraint error for the 'name' attribute:
     MyApp::MyClass->new( name=>'John' );
     MyApp::MyClass->new( name=>{first_name=>'John'} );
     MyApp::MyClass->new( name=>{first_name=>'John', age=>39} );
-
+    MyApp::MyClass->new( name=>{first=>'Vanessa', middle=>[1,2], last=>'Li'} );
+    
 Please see the test cases for more examples.
 
 =head1 DESCRIPTION
@@ -215,6 +231,29 @@ hashref.  For example:
 
     Dict[name=>Str, age=>Int]; ## Validates {name=>'John', age=>39}
 
+=head2 Optional [$constraint]
+
+This is primarily a helper constraint for Dict and Tuple type constraints.  What
+this allows if for you to assert that a given type constraint is allowed to be
+null (but NOT undefined).  If the value is null, then the type constraint passes
+but if the value is defined it must validate against the type constraint.  This
+makes it easy to make a Dict where one or more of the keys doesn't have to exist
+or a tuple where some of the values are not required.  For example:
+
+    subtype Name() => as Dict[
+        first=>Str,
+        last=>Str,
+        middle=>Optional[Str],
+    ];
+        
+Creates a constraint that validates against a hashref with the keys 'first' and
+'last' being strings and required while an optional key 'middle' is must be a
+string if it appears but doesn't have to appear.  So in this case both the
+following are valid:
+
+    {first=>'John', middle=>'James', last=>'Napiorkowski'}
+    {first=>'Vanessa', last=>'Li'}
+    
 =head1 EXAMPLES
 
 Here are some additional example usage for structured types.  All examples can
@@ -274,7 +313,9 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 						return;
 					}				
 				} else {
-					return;
+					unless($type_constraint->check()) {
+						return;
+					}
 				}
 			}
 			## Make sure there are no leftovers.
@@ -309,7 +350,9 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 						return;
 					}
 				} else { 
-					return;
+					unless($type_constraint->check()) {
+						return;
+					}
 				}
 			}
 			## Make sure there are no leftovers.
