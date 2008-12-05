@@ -4,7 +4,7 @@ use 5.008;
 use Moose;
 use Moose::Util::TypeConstraints;
 use MooseX::Meta::TypeConstraint::Structured;
-use MooseX::Types -declare => [qw(Dict Tuple)];
+use MooseX::Types -declare => [qw(Dict Tuple Optional)];
 
 our $VERSION = '0.05';
 our $AUTHORITY = 'cpan:JJNAPIORK';
@@ -260,10 +260,11 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 	MooseX::Meta::TypeConstraint::Structured->new(
 		name => "MooseX::Types::Structured::Tuple" ,
 		parent => find_type_constraint('ArrayRef'),
-		constraint_generator=> sub {
+		constraint_generator=> sub { 
 			## Get the constraints and values to check
-			my @type_constraints = @{shift @_};            
-			my @values = @{shift @_};
+            my ($type_constraints, $values) = @_;
+			my @type_constraints = defined $type_constraints ? @$type_constraints: ();            
+			my @values = defined $values ? @$values: ();
 			## Perform the checking
 			while(@type_constraints) {
 				my $type_constraint = shift @type_constraints;
@@ -292,10 +293,11 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 	MooseX::Meta::TypeConstraint::Structured->new(
 		name => "MooseX::Types::Structured::Dict",
 		parent => find_type_constraint('HashRef'),
-		constraint_generator=> sub {
+		constraint_generator=> sub { 
 			## Get the constraints and values to check
-			my %type_constraints = @{shift @_};            
-			my %values = %{shift @_};
+            my ($type_constraints, $values) = @_;
+			my %type_constraints = defined $type_constraints ? @$type_constraints: ();            
+			my %values = defined $values ? %$values: ();
 			## Perform the checking
 			while(%type_constraints) {
 				my($key, $type_constraint) = each %type_constraints;
@@ -306,12 +308,12 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 					unless($type_constraint->check($value)) {
 						return;
 					}
-				} else {
+				} else { 
 					return;
 				}
 			}
 			## Make sure there are no leftovers.
-			if(%values) {
+			if(%values) { 
 				return;
 			} elsif(%type_constraints) {
 				return;
@@ -321,6 +323,33 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 		},
 	)
 );
+
+OPTIONAL: {
+    my $Optional = Moose::Meta::TypeConstraint::Parameterizable->new(
+        name => 'MooseX::Types::Structured::Optional',
+        package_defined_in => __PACKAGE__,
+        parent => find_type_constraint('Item'),
+        constraint => sub { 1 },
+        constraint_generator => sub {
+            my ($type_parameter, @args) = @_;
+            my $check = $type_parameter->_compiled_type_constraint();
+            return sub {
+                my (@args) = @_;			
+                if(exists($args[0])) {
+                    ## If it exists, we need to validate it
+                    $check->($args[0]);
+                } else {
+                    ## But it's is okay if the value doesn't exists
+                    return 1;
+                }
+            }
+        }
+    );
+
+    Moose::Util::TypeConstraints::register_type_constraint($Optional);
+    Moose::Util::TypeConstraints::add_parameterizable_type($Optional);
+}
+
 
 =head1 SEE ALSO
 

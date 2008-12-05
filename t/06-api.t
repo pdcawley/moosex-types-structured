@@ -1,9 +1,10 @@
 BEGIN {
 	use strict;
 	use warnings;
-	use Test::More tests=>56;
+	use Test::More tests=>68;
 }
 
+use Moose::Util::TypeConstraints;
 use MooseX::Types::Structured qw(Dict Tuple);
 use MooseX::Types::Moose qw(Int Str Object ArrayRef HashRef);
 use MooseX::Types -declare => [qw(
@@ -112,3 +113,24 @@ ok (!MyTuple2->is_subtype_of(MyTuple1), 'MyTuple2 is_subtype_of MyTuple1');
 ok (!MyTuple1->is_subtype_of(MyTuple3), 'MyTuple1 NOT is_subtype_of MyTuple3');
 ok (!MyTuple2->is_subtype_of(MyTuple3), 'MyTuple2 NOT is_subtype_of MyTuple3');
 
+## Test manual parameterizing
+
+PARAMETERIZE: {
+
+    ok (my $int = Moose::Util::TypeConstraints::find_or_parse_type_constraint('Int'), 'Got Int');
+    ok (my $str = Moose::Util::TypeConstraints::find_or_parse_type_constraint('Str'), 'Got Str');    
+    ok (my $hashref = Moose::Util::TypeConstraints::find_or_parse_type_constraint('HashRef[Int]'), 'Got HashRef');   
+
+    ## Test Dict->parameterize
+    ok (my $test_dict = Dict(), 'Created Test Dict');
+    ok (my $person = $test_dict->parameterize(name=>$str, age=>$int), 'Parameterized It');
+    ok ($person->check({name=>'John', age=>21}), 'Passed');
+    ok ($person->check({age=>25, name=>'User'}), 'Passed');
+    
+    ## Test Tuple->parameterize
+    ok (my $test_tuple = Tuple(), 'Created Test Tuple');
+    ok (my $int_and_hashref = $test_tuple->parameterize($int, $hashref), 'Parameterized It');
+    ok ($int_and_hashref->check([1, {key=>2, key2=>3}]), "Passed");
+    ok (!$int_and_hashref->check(['a', {key=>2, key2=>3}]), "Not Passed");    
+    ok (!$int_and_hashref->check([1, {key=>'a', key2=>3}]), "Not Passed");
+}

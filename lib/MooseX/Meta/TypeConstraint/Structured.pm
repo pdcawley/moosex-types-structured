@@ -45,7 +45,11 @@ a set of type constraints.
 
 =cut
 
-has 'constraint_generator' => (is=>'ro', isa=>'CodeRef');
+has 'constraint_generator' => (
+    is=>'ro',
+    isa=>'CodeRef',
+    predicate=>'has_constraint_generator',
+);
 
 =head1 METHODS
 
@@ -76,8 +80,9 @@ of values (to be passed at check time)
 sub generate_constraint_for {
     my ($self, $type_constraints) = @_;
     return sub {
+        my (@args) = @_;
         my $constraint_generator = $self->constraint_generator;
-        return $constraint_generator->($type_constraints, @_);
+        return $constraint_generator->($type_constraints, @args);
     };
 }
 
@@ -88,20 +93,39 @@ Given a ref of type constraints, create a structured type.
 =cut
 
 sub parameterize {
+    
     my ($self, @type_constraints) = @_;
     my $class = ref $self;
     my $name = $self->name .'['. join(',', map {"$_"} @type_constraints) .']';
+    my $constraint_generator = $self->__infer_constraint_generator;
 
     return $class->new(
         name => $name,
         parent => $self,
         type_constraints => \@type_constraints,
-        constraint_generator => $self->constraint_generator || sub {
+        constraint_generator => $constraint_generator,
+    );
+}
+
+=head2 __infer_constraint_generator
+
+This returns a CODEREF which generates a suitable constraint generator.  Not
+user servicable, you'll never call this directly.
+
+=cut
+
+sub __infer_constraint_generator {
+    my ($self) = @_;
+    if($self->has_constraint_generator) {
+        return $self->constraint_generator;
+    } else {
+        return sub {
+            ## I'm not sure about this stuff but everything seems to work
             my $tc = shift @_;
             my $merged_tc = [@$tc, @{$self->parent->type_constraints}];
-            $self->constraint->($merged_tc, @_);
-        },
-    );
+            $self->constraint->($merged_tc, @_);            
+        };
+    }    
 }
 
 =head2 compile_type_constraint
