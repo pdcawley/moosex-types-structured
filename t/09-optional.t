@@ -4,24 +4,21 @@ use warnings;
 use Test::More tests=>15;
 use Moose::Util::TypeConstraints;
 use Moose::Meta::TypeConstraint::Parameterizable;
-use Moose;
+
 use Data::Dump qw/dump/;
 
 ## Sketch for how this could work
+
 ok my $Optional = Moose::Meta::TypeConstraint::Parameterizable->new(
 	name => 'Optional',
 	package_defined_in => __PACKAGE__,
 	parent => find_type_constraint('Item'),
 	constraint => sub { 1 },
 	constraint_generator => sub {
-		my $type_parameter = shift;
-		my $check = $type_parameter->_compiled_type_constraint;
+		my ($type_parameter, @args) = @_;
+		my $check = $type_parameter->_compiled_type_constraint();
 		return sub {
-			my (@args) = @_;
-			warn dump [@args];
-			warn exists $args[0]? "exists":"null";
-			warn defined $args[0]? "defined":"undef";		
-
+			my (@args) = @_;			
 			if(exists($args[0])) {
 				## If it exists, we need to validate it
 				$check->($args[0]);
@@ -47,10 +44,6 @@ ok my $arrayref = Moose::Util::TypeConstraints::find_or_parse_type_constraint('A
 
 ok my $Optional_Int = $Optional->parameterize($int), 'Parameterized Int';
 ok my $Optional_ArrayRef = $Optional->parameterize($arrayref), 'Parameterized ArrayRef';
-
-$Optional_Int->check();
-
-die;
 
 ok $Optional_Int->check() => 'Optional is allowed to not exist';
 
