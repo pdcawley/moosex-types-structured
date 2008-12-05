@@ -1,7 +1,6 @@
 package MooseX::Types::Structured;
 
 use 5.008;
-use Moose;
 use Moose::Util::TypeConstraints;
 use MooseX::Meta::TypeConstraint::Structured;
 use MooseX::Types -declare => [qw(Dict Tuple Optional)];

@@ -2,9 +2,15 @@ Revision history for MooseX-Types-Structured
 
 0.06    06 November 2008
         - Added a 'helper' type constraint called Optional. See docs for more.
-        - added lots of tests to cover the API better
+        - added lots of tests to cover the API better, coverage an fixes for
+          the ->parameterize method in particular have been clarified.
         - changes so that the type contraints are more forgiving when null
           values appear in method calls.
+        - used make_immutable which should speed up the constraints.
+        - removed some unneccesary calls to use Moose when I wasn't using Moose.
+        - lots of little code cleanup work and more internal documentation.
+        - This version requires a newer Moose than previous versions.  The
+          Makefile.PL has been updated to reflect this.
         
 0.05    08 November 2008
         - Fixed some wackiness in the documentation.
@@ -12,7 +18,7 @@ Revision history for MooseX-Types-Structured
 0.04    07 November 2008
         - Bumped minimum required versions of Moose and MooseX-Types to solve
           problem with overloading and type constraint names (issue resolved
-          in Moose code.
+          in Moose code.)
         - Changed the way the required Perl version string is used to increase
           compatibility and lowered minimum required Perl
 
