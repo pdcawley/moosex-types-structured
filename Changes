@@ -1,5 +1,11 @@
 Revision history for MooseX-Types-Structured
 
+0.06    06 November 2008
+        - Added a 'helper' type constraint called Optional. See docs for more.
+        - added lots of tests to cover the API better
+        - changes so that the type contraints are more forgiving when null
+          values appear in method calls.
+        
 0.05    08 November 2008
         - Fixed some wackiness in the documentation.
         
