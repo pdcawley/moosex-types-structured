@@ -72,7 +72,7 @@ OBJECTTEST: {
 	enum Gender,
 	 qw/male female transgendered/;
 	 
-    subtype TupleOptional1,
+    subtype TupleOptional1() =>
 		as Tuple[Int, MoreThanFive, Optional[Str|Object]];
 
     subtype TupleOptional2,
