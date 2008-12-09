@@ -1,4 +1,4 @@
-## Test case donated by Steven Little
+## Test case donated by Stevan Little
 
 BEGIN {
     package Interpreter;
