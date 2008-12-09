@@ -16,57 +16,99 @@ MooseX::Types::Structured - Structured Type Constraints for Moose
 
 The following is example usage for this module.
 
-    package MyApp::MyClass;
+    package Person;
 	
     use Moose;
-    use MooseX::Types::Moose qw(Str Int);
-    use MooseX::Types::Structured qw(Dict Optional);
+    use MooseX::Types::Moose qw(Str Int HashRef);
+    use MooseX::Types::Structured qw(Dict Tuple Optional);
 
     ## A name has a first and last part, but middle names are not required
     has name => (
         isa=>Dict[
-            first=>Str,
-            last=>Str,
-            middle=>Optional[Str],
+            first => Str,
+            last => Str,
+            middle => Optional[Str],
         ],
+    );
+    
+    ## description is a string field followed by a HashRef of tagged data.
+    has description => (
+      isa=>Tuple[
+        Str,
+        Optional[HashRef],
+     ],
     );
 
 Then you can instantiate this class with something like:
 
-    my $john = MyApp::MyClass->new(
+    my $john = Person->new(
         name => {
-            first=>'John',
-            middle=>'James'
-            last=>'Napiorkowski',
+            first => 'John',
+            middle => 'James'
+            last => 'Napiorkowski',
         },
+        description => [
+            'A cool guy who loves Perl and Moose.', {
+                married_to => 'Vanessa Li',
+                born_in => 'USA',
+            };
+        ]
     );
 
 Or with:
 
-    my $vanessa = MyApp::MyClass->new(
+    my $vanessa = Person->new(
         name => {
-            first=>'Vanessa',
-            last=>'Li'
+            first => 'Vanessa',
+            last => 'Li'
         },
+        description => ['A great student!'],
     );
 
 But all of these would cause a constraint error for the 'name' attribute:
 
-    MyApp::MyClass->new( name=>'John' );
-    MyApp::MyClass->new( name=>{first_name=>'John'} );
-    MyApp::MyClass->new( name=>{first_name=>'John', age=>39} );
-    MyApp::MyClass->new( name=>{first=>'Vanessa', middle=>[1,2], last=>'Li'} );
+    ## Value for 'name' not a HashRef
+    Person->new( name => 'John' );
     
+    ## Value for 'name' has incorrect hash key and missing required keys
+    Person->new( name => {
+        first_name => 'John'
+    });
+    
+    ## Also incorrect keys
+    Person->new( name => {
+        first_name => 'John',
+        age => 39,
+    });
+    
+    ## key 'middle' incorrect type, should be a Str not a ArrayRef
+    Person->new( name => {
+        first => 'Vanessa',
+        middle => [1,2],
+        last => 'Li',
+    }); 
+
+And these would cause a constraint error for the 'description' attribute:
+
+    ## Should be an ArrayRef
+    Person->new( description => 'Hello I am a String' );
+    
+    ## First element must be a string not a HashRef.
+    Person->new (description => [{
+        tag1 => 'value1',
+        tag2 => 'value2'
+    }]);
+
 Please see the test cases for more examples.
 
 =head1 DESCRIPTION
 
 A structured type constraint is a standard container L<Moose> type constraint,
-such as an arrayref or hashref, which has been enhanced to allow you to
-explicitly name all the allow type constraints inside the structure.  The
+such as an ArrayRef or HashRef, which has been enhanced to allow you to
+explicitly name all the allowed type constraints inside the structure.  The
 generalized form is:
 
-    TypeConstraint[@TypeParameters|%TypeParameters]
+    TypeConstraint[@TypeParameters or %TypeParameters]
 
 Where 'TypeParameters' is an array or hash of L<Moose::Meta::TypeConstraint>.
 
@@ -77,8 +119,8 @@ if you are not familiar with it.
 =head2 Comparing Parameterized types to Structured types
 
 Parameterized constraints are built into core Moose and you are probably already
-familuar with the type constraints 'HashRef' and 'ArrayRef'.  Structured types
-have similar functionality, so their syntax is  likewise similar. For example,
+familar with the type constraints 'HashRef' and 'ArrayRef'.  Structured types
+have similar functionality, so their syntax is likewise similar. For example,
 you could define a parameterized constraint like:
 
     subtype ArrayOfInts,
@@ -103,20 +145,20 @@ example:
      
 This defines a type constraint that validates values like:
 
-    ['Hello', 100, {key1=>'value1', key2=>'value2'}];
+    ['Hello', 100, {key1 => 'value1', key2 => 'value2'}];
     ['World', 200];
     
 Notice that the last type constraint in the structure is optional.  This is
 enabled via the helper Optional type constraint, which is a variation of the
-core Moose type constraint Maybe.  The main difference is that Optional type
+core Moose type constraint 'Maybe'.  The main difference is that Optional type
 constraints are required to validate if they exist, while Maybe permits undefined
 values.  So the following example would not validate:
 
     StringIntOptionalHashRef->validate(['Hello Undefined', 1000, undef]);
     
 Please note the subtle difference between undefined and null.  If you wish to
-allow both null and undefined, you should use the core Moose Maybe type constraint
-instead:
+allow both null and undefined, you should use the core Moose 'Maybe' type
+constraint instead:
 
     use MooseX::Types -declare [qw(StringIntOptionalHashRef)];
     use MooseX::Types::Moose qw(Maybe);
@@ -129,7 +171,7 @@ instead:
 
 This would validate the following:
 
-    ['Hello', 100, {key1=>'value1', key2=>'value2'}];
+    ['Hello', 100, {key1 => 'value1', key2 => 'value2'}];
     ['World', 200, undef];    
     ['World', 200];
 
@@ -137,17 +179,25 @@ Structured Constraints are not limited to arrays.  You can define a structure
 against a hashref with 'Dict' as in this example:
 
     subtype FirstNameLastName,
-     as Dict[firstname=>Str, lastname=>Str];
+     as Dict[
+        firstname => Str,
+        lastname => Str,
+     ];
 
-This would constrain a hashref to something like:
+This would constrain a HashRef to something like:
 
-    {firstname=>'Vanessa', lastname=>'Li'};
+    {firstname => 'Christopher', lastname= > 'Parsons'};
     
 but all the following would fail validation:
 
-     {first=>'Vanessa', last=>'Li'};
-     {firstname=>'Vanessa', lastname=>'Li', middlename=>'NA'};   
-     ['Vanessa', 'Li']; 
+    ## Incorrect keys
+    {first => 'Christopher', last => 'Parsons'};
+    
+    ## Too many keys
+    {firstname => 'Christopher', lastname => 'Parsons', middlename => 'Allen'};
+    
+    ## Not a HashRef
+    ['Christopher', 'Christopher']; 
 
 These structures can be as simple or elaborate as you wish.  You can even
 combine various structured, parameterized and simple constraints all together:
@@ -173,22 +223,33 @@ example:
     package MyApp::MyStruct;
     use Moose;
     
+    ## lazy way to make a bunch of attributes
     has $_ for qw(full_name age_in_years);
     
     package MyApp::MyClass;
     use Moose;
     
-    has person => (isa=>'MyApp::MyStruct');		
+    has person => (isa => 'MyApp::MyStruct');		
     
     my $instance = MyApp::MyClass->new(
-        person=>MyApp::MyStruct->new(full_name=>'John', age_in_years=>39),
+        person=>MyApp::MyStruct->new(
+            full_name => 'John',
+            age_in_years => 39
+        ),
     );
 	
 This method may take some additional time to setup but will give you more
 flexibility.  However, structured constraints are highly compatible with this
 method, granting some interesting possibilities for coercion.  Try:
 
+    package MyApp::MyClass;
+    
+    use Moose;
     use MyApp::MyStruct;
+    
+    ## It's recommended your type declarations live in a separate class in order
+    ## to promote reusability and clarity.  Inlined here for brevity.
+    
     use MooseX::Types::DateTime qw(DateTime);
     use MooseX::Types -declare [qw(MyStruct)];
     use MooseX::Types::Moose qw(Str Int);
@@ -217,8 +278,29 @@ method, granting some interesting possibilities for coercion.  Try:
      ], via {
         my $name = $_->{firstname} .' '. $_->{lastname};
         my $age = DateTime->now - $_->{dob};
-        MyApp::MyStruct->new( full_name=>$name, age_in_years=>$age->years );
+        
+        MyApp::MyStruct->new(
+            full_name=>$name,
+            age_in_years=>$age->years,
+        );
      };
+     
+    has person => (isa=>MyStruct);	
+     
+This would allow you to instantiate with something like:
+
+    my $obj = MyApp::MyClass->new( person => {
+        full_name=>'John Napiorkowski',
+        age_in_years=>39,
+    });
+    
+Or even:
+
+    my $obj = MyApp::MyClass->new( person => {
+        lastname=>'John',
+        firstname=>'Napiorkowski',
+        dob=>DateTime->new(year=>1969),
+    });
 
 If you are not familiar with how coercions work, check out the L<Moose> cookbook
 entry L<Moose::Cookbook::Recipe5> for an explanation.  The section L</Coercions>
@@ -226,46 +308,66 @@ has additional examples and discussion.
 
 =head2 Subtyping a Structured type constraint
 
-You need to exercise some care when you try to subtype a structured type
-as in this example:
+You need to exercise some care when you try to subtype a structured type as in
+this example:
 
     subtype Person,
-     as Dict[name=>Str, age=>Int];
+     as Dict[name => Str];
 	 
     subtype FriendlyPerson,
-     as Person[name=>Str, age=>Int, totalFriends=>Int];
+     as Person[
+        name => Str,
+        total_friends => Int,
+     ];
 	 
 This will actually work BUT you have to take care that the subtype has a
 structure that does not contradict the structure of it's parent.  For now the
 above works, but I will clarify the syntax for this at a future point, so
 it's recommended to avoid (should not really be needed so much anyway).  For
 now this is supported in an EXPERIMENTAL way.  Your thoughts, test cases and
-patches are welcomed for discussion.
+patches are welcomed for discussion.  If you find a good use for this, please
+let me know.
 
 =head2 Coercions
 
 Coercions currently work for 'one level' deep.  That is you can do:
 
     subtype Person,
-     as Dict[name=>Str, age=>Int];
+     as Dict[
+        name => Str,
+        age => Int
+    ];
     
     subtype Fullname,
-     as Dict[first=>Str, last=>Str];
+     as Dict[
+        first => Str,
+        last => Str
+     ];
     
     coerce Person,
      ## Coerce an object of a particular class
-     from BlessedPersonObject,
-     via { +{name=>$_->name, age=>$_->age} },
-     ## Coerce from [$name, $age]
-     from ArrayRef,
-     via { +{name=>$_->[0], age=>$_->[1] },
-     ## Coerce from {fullname=>{first=>...,last=>...}, dob=>$DateTimeObject}
-     from Dict[fullname=>Fullname, dob=>DateTime],
-     via {
-        my $age = $_->dob - DateTime->now;
+     from BlessedPersonObject, via {
         +{
-            name=> $_->{fullname}->{first} .' '. $_->{fullname}->{last},
-            age=>$age->years
+            name=>$_->name,
+            age=>$_->age,
+        };
+     },
+     
+     ## Coerce from [$name, $age]
+     from ArrayRef, via {
+        +{
+            name=>$_->[0],
+            age=>$_->[1],
+        },
+     },
+     ## Coerce from {fullname=>{first=>...,last=>...}, dob=>$DateTimeObject}
+     from Dict[fullname=>Fullname, dob=>DateTime], via {
+        my $age = $_->dob - DateTime->now;
+        my $firstn = $_->{fullname}->{first};
+        my $lastn = $_->{fullname}->{last}
+        +{
+            name => $_->{fullname}->{first} .' '. ,
+            age =>$age->years
         }
      };
 	 
@@ -283,15 +385,15 @@ This type library defines the following constraints.
 
 =head2 Tuple[@constraints]
 
-This defines an arrayref based constraint which allows you to validate a specific
-list of constraints.  For example:
+This defines an ArrayRef based constraint which allows you to validate a specific
+list of contained constraints.  For example:
 
     Tuple[Int,Str]; ## Validates [1,'hello']
     Tuple[Str|Object, Int]; ##Validates ['hello', 1] or [$object, 2]
 
 =head2 Dict[%constraints]
 
-This defines a hashref based constraint which allowed you to validate a specific
+This defines a HashRef based constraint which allowed you to validate a specific
 hashref.  For example:
 
     Dict[name=>Str, age=>Int]; ## Validates {name=>'John', age=>39}
@@ -351,12 +453,43 @@ other MooseX::Types libraries.
         age=>$_->{years},
      }},
      from Dict[fullname=>Dict[last=>Str, first=>Str], dob=>DateTime],
+     ## DateTime needs to be inside of single quotes here to disambiguate the
+     ## class package from the DataTime type constraint imported via the
+     ## line "use MooseX::Types::DateTime qw(DateTime);"
      via { +{
         name => "$_->{fullname}{first} $_->{fullname}{last}",
         age => ($_->{dob} - 'DateTime'->now)->years,
      }};
      
     has person => (is=>'rw', isa=>Person, coerce=>1);
+    
+And now you can instantiate with all the following:
+
+    __PACKAGE__->new(
+        name=>'John Napiorkowski',
+        age=>39,
+    );
+        
+    __PACKAGE__->new(
+        first=>'John',
+        last=>'Napiorkowski',
+        years=>39,
+    );
+    
+    __PACKAGE__->new(
+        fullname => {
+            first=>'John',
+            last=>'Napiorkowski'
+        },
+        dob => 'DateTime'->new(
+            year=>1969,
+            month=>2,
+            day=>13
+        ),
+    );
+    
+This technique is a way to support various ways to instantiate your class in a
+clean and declarative way.
 
 =cut
 
@@ -367,7 +500,8 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 		constraint_generator=> sub { 
 			## Get the constraints and values to check
             my ($type_constraints, $values) = @_;
-			my @type_constraints = defined $type_constraints ? @$type_constraints: ();            
+			my @type_constraints = defined $type_constraints ?
+             @$type_constraints : ();            
 			my @values = defined $values ? @$values: ();
 			## Perform the checking
 			while(@type_constraints) {
@@ -378,6 +512,7 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 						return;
 					}				
 				} else {
+                    ## Test if the TC supports null values
 					unless($type_constraint->check()) {
 						return;
 					}
@@ -388,7 +523,7 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 				return;
 			} elsif(@type_constraints) {
 				return;
-			}else {
+			} else {
 				return 1;
 			}
 		}
@@ -402,7 +537,8 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 		constraint_generator=> sub { 
 			## Get the constraints and values to check
             my ($type_constraints, $values) = @_;
-			my %type_constraints = defined $type_constraints ? @$type_constraints: ();            
+			my %type_constraints = defined $type_constraints ?
+             @$type_constraints : ();            
 			my %values = defined $values ? %$values: ();
 			## Perform the checking
 			while(%type_constraints) {
@@ -414,7 +550,8 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 					unless($type_constraint->check($value)) {
 						return;
 					}
-				} else { 
+				} else {
+                    ## Test to see if the TC supports null values
 					unless($type_constraint->check()) {
 						return;
 					}
@@ -425,7 +562,7 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 				return;
 			} elsif(%type_constraints) {
 				return;
-			}else {
+			} else {
 				return 1;
 			}
 		},
@@ -442,7 +579,9 @@ OPTIONAL: {
             my ($type_parameter, @args) = @_;
             my $check = $type_parameter->_compiled_type_constraint();
             return sub {
-                my (@args) = @_;			
+                my (@args) = @_;
+                ## Does the arg exist?  Something exists if it's a 'real' value
+                ## or if it is set to undef.
                 if(exists($args[0])) {
                     ## If it exists, we need to validate it
                     $check->($args[0]);
@@ -468,7 +607,8 @@ L<MooseX::Meta::TypeConstraint::Structured>
 
 =head1 TODO
 
-Need to clarify deep coercions, need to clarify subtypes of subtypes.
+Need to clarify deep coercions, need to clarify subtypes of subtypes.  Would
+like more and better examples and probably some best practices guidence.
 
 =head1 AUTHOR
 
