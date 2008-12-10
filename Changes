@@ -1,6 +1,13 @@
 Revision history for MooseX-Types-Structured
 
-0.06    06 November 2008
+0.07    09 December 2008
+        - Fixed typo in previous changelog
+        - documentation improvements and updates
+        - increased version requirement for MooseX::Types so that we can take
+          advantage of the recursion support added.
+        - added test for recursion.
+
+0.06    06 December 2008
         - Added a 'helper' type constraint called Optional. See docs for more.
         - added lots of tests to cover the API better, coverage and fixes for
           the ->parameterize method in particular have been clarified.

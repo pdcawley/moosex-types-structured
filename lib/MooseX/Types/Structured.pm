@@ -5,7 +5,7 @@ use Moose::Util::TypeConstraints;
 use MooseX::Meta::TypeConstraint::Structured;
 use MooseX::Types -declare => [qw(Dict Tuple Optional)];
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 our $AUTHORITY = 'cpan:JJNAPIORK';
 
 =head1 NAME
