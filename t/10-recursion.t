@@ -38,8 +38,6 @@ BEGIN {
     ok is_Op('-'), q{passes is_Op('-')};
     ok is_Op('^'), q{passes is_Op('^')};
 
-    use Data::Dump qw/dump/;
-    #die dump Expr();
     ok Expr->check([ 11, '+', 12]), '';
     ok is_Expr([ 1, '+', 1]), q{passes is_Expr([ 1, '+', 1])};
     ok is_Expr([ 1, '+', [ 1, '+', 1 ]]), q{passes is_Expr([ 1, '+', [ 1, '+', 1 ]])};
