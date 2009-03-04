@@ -110,7 +110,8 @@ generalized form is:
 
     TypeConstraint[@TypeParameters or %TypeParameters]
 
-Where 'TypeParameters' is an array or hash of L<Moose::Meta::TypeConstraint>.
+Where 'TypeParameters' is an array reference or hash references of 
+L<Moose::Meta::TypeConstraint> objects.
 
 This type library enables structured type constraints. It is built on top of the
 L<MooseX::Types> library system, so you should review the documentation for that
@@ -126,14 +127,14 @@ you could define a parameterized constraint like:
     subtype ArrayOfInts,
      as Arrayref[Int];
 
-which would constraint a value to something like [1,2,3,...] and so on.  On the
+which would constrain a value to something like [1,2,3,...] and so on.  On the
 other hand, a structured type constraint explicitly names all it's allowed
 'internal' type parameter constraints.  For the example:
 
     subtype StringFollowedByInt,
      as Tuple[Str,Int];
 	
-would constrain it's value to something like ['hello', 111] but ['hello', 'world']
+would constrain it's value to things like ['hello', 111] but ['hello', 'world']
 would fail, as well as ['hello', 111, 'world'] and so on.  Here's another
 example:
 
@@ -151,8 +152,8 @@ This defines a type constraint that validates values like:
 Notice that the last type constraint in the structure is optional.  This is
 enabled via the helper Optional type constraint, which is a variation of the
 core Moose type constraint 'Maybe'.  The main difference is that Optional type
-constraints are required to validate if they exist, while Maybe permits undefined
-values.  So the following example would not validate:
+constraints are required to validate if they exist, while 'Maybe' permits 
+undefined values.  So the following example would not validate:
 
     StringIntOptionalHashRef->validate(['Hello Undefined', 1000, undef]);
     
@@ -160,11 +161,11 @@ Please note the subtle difference between undefined and null.  If you wish to
 allow both null and undefined, you should use the core Moose 'Maybe' type
 constraint instead:
 
-    use MooseX::Types -declare [qw(StringIntOptionalHashRef)];
+    use MooseX::Types -declare [qw(StringIntMaybeHashRef)];
     use MooseX::Types::Moose qw(Maybe);
     use MooseX::Types::Structured qw(Tuple);
 
-    subtype StringIntOptionalHashRef,
+    subtype StringIntMaybeHashRef,
      as Tuple[
         Str, Int, Maybe[HashRef]
      ];
@@ -175,8 +176,8 @@ This would validate the following:
     ['World', 200, undef];    
     ['World', 200];
 
-Structured Constraints are not limited to arrays.  You can define a structure
-against a hashref with 'Dict' as in this example:
+Structured constraints are not limited to arrays.  You can define a structure
+against a HashRef with 'Dict' as in this example:
 
     subtype FirstNameLastName,
      as Dict[
@@ -202,7 +203,7 @@ but all the following would fail validation:
 These structures can be as simple or elaborate as you wish.  You can even
 combine various structured, parameterized and simple constraints all together:
 
-    subtype crazy,
+    subtype Crazy,
      as Tuple[
         Int,
         Dict[name=>Str, age=>Int],
@@ -234,7 +235,7 @@ example:
     my $instance = MyApp::MyClass->new(
         person=>MyApp::MyStruct->new(
             full_name => 'John',
-            age_in_years => 39
+            age_in_years => 39,
         ),
     );
 	
@@ -379,6 +380,64 @@ Please see the test '07-coerce.t' for a more detailed example.  Discussion on
 extending coercions to support this welcome on the Moose development channel or
 mailing list.
 
+=head2 Recursion
+
+Newer versions of L<MooseX::Types> support recursive type constraints.  That is
+you can include a type constraint as a contained type constraint of itself.  For
+example:
+
+	subtype Person,
+	 as Dict[
+	 	name=>Str,
+	 	friends=>Optional[
+	 		ArrayRef[Person]
+	 	],
+	 ];
+	 
+This would declare a Person subtype that contains a name and an optional
+ArrayRef of Persons who are friends as in:
+
+	{
+		name => 'Mike',
+		friends => [
+			{ name => 'John' },
+			{ name => 'Vincent' },
+			{
+				name => 'Tracey',
+				friends => [
+					{ name => 'Stephenie' },
+					{ name => 'Ilya' },
+				],
+			},
+		],
+	};
+
+Please take care to make sure the recursion node is either Optional, or declare
+a Union with an non recursive option such as:
+
+	subtype Value
+	 as Tuple[
+	 	Str,
+	 	Str|Tuple,
+	 ];
+	 
+Which validates:
+
+	[
+		'Hello', [
+			'World', [
+				'Is', [
+					'Getting',
+					'Old',
+				],
+			],
+		],
+	];
+
+Otherwise you will define a subtype thatis impossible to validate since it is 
+infinitely recursive.  For more information about defining recursive types,
+please see the documentation in L<MooseX::Types> and the test cases.
+
 =head1 TYPE CONSTRAINTS
 
 This type library defines the following constraints.
@@ -389,7 +448,7 @@ This defines an ArrayRef based constraint which allows you to validate a specifi
 list of contained constraints.  For example:
 
     Tuple[Int,Str]; ## Validates [1,'hello']
-    Tuple[Str|Object, Int]; ##Validates ['hello', 1] or [$object, 2]
+    Tuple[Str|Object, Int]; ## Validates ['hello', 1] or [$object, 2]
 
 =head2 Dict[%constraints]
 
@@ -444,15 +503,27 @@ other MooseX::Types libraries.
     use MooseX::Types -declare => [qw(Name Age Person)];
      
     subtype Person,
-     as Dict[name=>Str, age=>Int];
+     as Dict[
+     	name=>Str,
+     	age=>Int,
+     ];
     
     coerce Person,
-     from Dict[first=>Str, last=>Str, years=>Int],
-     via { +{
+     from Dict[
+     	first=>Str, 
+     	last=>Str, 
+     	years=>Int,
+     ], via { +{
         name => "$_->{first} $_->{last}",
-        age=>$_->{years},
+        age => $_->{years},
      }},
-     from Dict[fullname=>Dict[last=>Str, first=>Str], dob=>DateTime],
+     from Dict[
+     	fullname=>Dict[
+     		last=>Str, 
+     		first=>Str,
+     	], 
+     	dob=>DateTime,
+     ],
      ## DateTime needs to be inside of single quotes here to disambiguate the
      ## class package from the DataTime type constraint imported via the
      ## line "use MooseX::Types::DateTime qw(DateTime);"
@@ -520,8 +591,10 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 			}
 			## Make sure there are no leftovers.
 			if(@values) {
+                warn "I failed since there were left over values";
 				return;
 			} elsif(@type_constraints) {
+                warn "I failed due to left over TC";
 				return;
 			} else {
 				return 1;
@@ -607,8 +680,13 @@ L<MooseX::Meta::TypeConstraint::Structured>
 
 =head1 TODO
 
-Need to clarify deep coercions, need to clarify subtypes of subtypes.  Would
-like more and better examples and probably some best practices guidence.
+Here's a list of stuff I would be happy to get volunteers helping with:
+
+All POD examples need test cases in t/documentation/*.t
+Want to break out the examples section to a separate cookbook style POD.
+Want more examples and best practice / usage guidance for authors
+Need to clarify deep coercions, 
+Need to clarify subtypes of subtypes.
 
 =head1 AUTHOR
 
