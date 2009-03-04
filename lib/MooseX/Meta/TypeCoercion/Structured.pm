@@ -11,9 +11,8 @@ MooseX::Meta::TypeCoercion::Structured - Coerce structured type constraints.
 =head1 DESCRIPTION
 
 We need to make sure we can properly coerce the structure elements inside a
-structured type constraint.
-
-This class is TDB once we fully understand the requirements for deep coercions.
+structured type constraint.  However requirements for the best way to allow
+this are still in flux.  For now this class is a placeholder.
 
 =head1 METHODS
 
