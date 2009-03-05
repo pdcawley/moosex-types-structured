@@ -572,7 +572,13 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 			## Get the constraints and values to check
             my ($type_constraints, $values) = @_;
 			my @type_constraints = defined $type_constraints ?
-             @$type_constraints : ();            
+             @$type_constraints : ();
+            
+            my $overflow_handler;
+            if(ref $type_constraints[-1] eq 'CODE') {
+                $overflow_handler = pop @type_constraints;
+            }
+            
 			my @values = defined $values ? @$values: ();
 			## Perform the checking
 			while(@type_constraints) {
@@ -591,8 +597,11 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 			}
 			## Make sure there are no leftovers.
 			if(@values) {
-                warn "I failed since there were left over values";
-				return;
+                if($overflow_handler) {
+                    return $overflow_handler->(@values);
+                } else {
+                    return;
+                }
 			} elsif(@type_constraints) {
                 warn "I failed due to left over TC";
 				return;
@@ -610,8 +619,14 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 		constraint_generator=> sub { 
 			## Get the constraints and values to check
             my ($type_constraints, $values) = @_;
-			my %type_constraints = defined $type_constraints ?
-             @$type_constraints : ();            
+			my @type_constraints = defined $type_constraints ?
+             @$type_constraints : ();
+            
+            my $overflow_handler;
+            if(ref $type_constraints[-1] eq 'CODE') {
+                $overflow_handler = pop @type_constraints;
+            } 
+            my (%type_constraints) = @type_constraints;
 			my %values = defined $values ? %$values: ();
 			## Perform the checking
 			while(%type_constraints) {
@@ -632,7 +647,11 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 			}
 			## Make sure there are no leftovers.
 			if(%values) { 
-				return;
+                if($overflow_handler) {
+                    return $overflow_handler->(%values);
+                } else {
+                    return;
+                }
 			} elsif(%type_constraints) {
 				return;
 			} else {
