@@ -8,14 +8,21 @@ use Moose::Util::TypeConstraints;
 use MooseX::Types::Structured qw(Dict Tuple);
 use MooseX::Types::Moose qw(Int Str ArrayRef HashRef);
 
+
+sub merge(&$) {
+    my ($code, $tc) = @_;
+    return sub {
+        my @tail_args = @_;
+        $tc->check($code->(@tail_args));
+    }
+}
+
 my $array_tailed_tuple =
     subtype 'array_tailed_tuple',
      as Tuple[
         Int,
         Str,
-        sub {
-            (ArrayRef[Int])->check([@_]);
-        },
+        merge {[@_]} ArrayRef[Int],
      ];
   
 ok !$array_tailed_tuple->check(['ss',1]), 'correct fail';
@@ -29,9 +36,7 @@ my $hash_tailed_tuple =
      as Tuple[
        Int,
        Str,
-       sub {
-        (HashRef[Int])->check({@_});
-       },
+       merge {+{@_}} HashRef[Int],
      ];
 
 ok !$hash_tailed_tuple->check(['ss',1]), 'correct fail';
@@ -45,9 +50,7 @@ my $hash_tailed_dict =
     as Dict[
       name=>Str,
       age=>Int,
-      sub {
-        (HashRef[Int])->check({@_});        
-      }
+       merge {+{@_}} HashRef[Int],
     ];
     
 ok !$hash_tailed_dict->check({name=>'john',age=>'napiorkowski'}), 'correct fail';
@@ -61,9 +64,7 @@ my $array_tailed_dict =
     as Dict[
       name=>Str,
       age=>Int,
-      sub {
-        (ArrayRef[Int])->check([@_]);       
-      }
+      merge {[@_]} ArrayRef[Int],
     ];
     
 ok !$array_tailed_dict->check({name=>'john',age=>'napiorkowski'}), 'correct fail';
