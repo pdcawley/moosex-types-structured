@@ -1,7 +1,7 @@
 BEGIN {
 	use strict;
 	use warnings;
-	use Test::More tests=>20;
+	use Test::More tests=>10;
 }
 
 use Moose::Util::TypeConstraints;
@@ -22,20 +22,6 @@ ok !$array_tailed_tuple->check({}), 'correct fail';
 ok $array_tailed_tuple->check([1,'hello',1,2,3,4]), 'correct pass with tail';
 ok !$array_tailed_tuple->check([1,'hello',1,2,'bad',4]), 'correct fail with tail';
 
-my $hash_tailed_tuple =
-    subtype 'hash_tailed_tuple',
-     as Tuple[
-       Int,
-       Str,
-       slurpy HashRef[Int],
-     ];
-
-ok !$hash_tailed_tuple->check(['ss',1]), 'correct fail';
-ok $hash_tailed_tuple->check([1,'ss']), 'correct pass';
-ok !$hash_tailed_tuple->check({}), 'correct fail';
-ok $hash_tailed_tuple->check([1,'hello',age=>25,zip=>10533]), 'correct pass with tail';
-ok !$hash_tailed_tuple->check([1,'hello',age=>25,name=>'john']), 'correct fail with tail';
-
 my $hash_tailed_dict =
     subtype 'hash_tailed_dict',
     as Dict[
@@ -50,6 +36,22 @@ ok !$hash_tailed_dict->check([]), 'correct fail';
 ok $hash_tailed_dict->check({name=>'Vanessa Li', age=>35, more1=>1,more2=>2}), 'correct pass with tail';
 ok !$hash_tailed_dict->check({name=>'Vanessa Li', age=>35, more1=>1,more2=>"aa"}), 'correct fail with tail';
 
+__END__
+
+my $hash_tailed_tuple =
+    subtype 'hash_tailed_tuple',
+     as Tuple[
+       Int,
+       Str,
+       slurpy HashRef[Int],
+     ];
+
+ok !$hash_tailed_tuple->check(['ss',1]), 'correct fail';
+ok $hash_tailed_tuple->check([1,'ss']), 'correct pass';
+ok !$hash_tailed_tuple->check({}), 'correct fail';
+ok $hash_tailed_tuple->check([1,'hello',age=>25,zip=>10533]), 'correct pass with tail';
+ok !$hash_tailed_tuple->check([1,'hello',age=>25,name=>'john']), 'correct fail with tail';
+
 my $array_tailed_dict =
     subtype 'hash_tailed_dict',
     as Dict[
@@ -61,19 +63,5 @@ my $array_tailed_dict =
 ok !$array_tailed_dict->check({name=>'john',age=>'napiorkowski'}), 'correct fail';
 ok $array_tailed_dict->check({name=>'Vanessa Li', age=>35}), 'correct pass';
 ok !$array_tailed_dict->check([]), 'correct fail';
-ok $array_tailed_dict->check({name=>'Vanessa Li', age=>35, 1,2}), 'correct pass with tail';
+ok $array_tailed_dict->check({name=>'Vanessa Li', age=>35, 1,2,3}), 'correct pass with tail';
 ok !$array_tailed_dict->check({name=>'Vanessa Li', age=>35, 1, "hello"}), 'correct fail with tail';
-
-my $insane_tc =
-	subtype 'insane_tc',
-	as Tuple[
-		Object,
-		slurpy Dict[
-			name=>Str,
-			age=>Int,
-			slurpy ArrayRef[Int],
-		]
-	];
-	
-ok $insane_tc->check([$insane_tc, name=>"John", age=>25, 1,2,3]),
-  'validated: [$insane_tc, name=>"John", age=>25, 1,2,3]';

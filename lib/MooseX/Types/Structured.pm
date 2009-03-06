@@ -481,7 +481,63 @@ following are valid:
 
     {first=>'John', middle=>'James', last=>'Napiorkowski'}
     {first=>'Vanessa', last=>'Li'}
+
+=head1 EXPORTABLE SUBROUTINES
+
+This type library makes available for export the following subroutines
+
+=head2 slurpy
+
+Structured type constraints by their nature are closed; that is validation will
+depend and an exact match between your structure definition and the arguments to
+be checked.  Sometimes you might wish for a slightly looser amount of validation.
+For example, you may wish to validate the first 3 elements of an array reference
+and allow for an arbitrary number of additional elements.  At first thought you
+might think you could do it this way:
+
+    #  I want to validate stuff like: [1,"hello", $obj, 2,3,4,5,6,...]
+    subtype AllowTailingArgs,
+     as Tuple[
+       Int,
+       Str,
+       Object,
+       ArrayRef[Int],
+     ];
+
+However what this will actually validate are structures like this:
+
+    [10,"Hello", $obj, [11,12,13,...] ]; # Notice element 4 is an ArrayRef
+
+In order to allow structured validation of, "and then some", arguments, you can
+use the </slurpy> method against a type constraint.  For example:
+
+    use MooseX::Types::Structured qw(Tuple slurpy);
     
+    subtype AllowTailingArgs,
+     as Tuple[
+       Int,
+       Str,
+       Object,
+       slurpy ArrayRef[Int],
+     ];
+
+This will now work as expected, validating ArrayRef structures such as:
+
+    [1,"hello", $obj, 2,3,4,5,6,...]
+    
+A few caveats apply.  First, the slurpy type constraint must be the last one in
+the list of type constraint parameters.  Second, the parent type of the slurpy
+type constraint must match that of the containing type constraint.  That means
+that a Tuple can allow a slurpy ArrayRef (or children of ArrayRefs, including
+another Tuple) and a Dict can allow a slurpy HashRef (or children/subtypes of
+HashRef, also including other Dict constraints).
+
+Please note the the technical way this works 'under the hood' is that the
+slurpy keywork transforms the target type constraint into a coderef.  Please do
+not try to create your own custom coderefs; always use the slurpy method.  The
+underlying technology may change in the future but the slurpy keyword will be
+supported.
+
 =head1 EXAMPLES
 
 Here are some additional example usage for structured types.  All examples can
@@ -600,7 +656,7 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 			## Make sure there are no leftovers.
 			if(@values) {
                 if($overflow_handler) {
-                    return $overflow_handler->(@values);
+                    return $overflow_handler->([@values]);
                 } else {
                     return;
                 }
@@ -650,7 +706,7 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 			## Make sure there are no leftovers.
 			if(%values) { 
                 if($overflow_handler) {
-                    return $overflow_handler->(%values);
+                    return $overflow_handler->(+{%values});
                 } else {
                     return;
                 }
@@ -693,24 +749,9 @@ OPTIONAL: {
 
 sub slurpy($) {
 	my $tc = shift @_;
-	## we don't want to force the TC to be a Moose::Meta::TypeConstraint, we
-	## just want to make sure it provides the minimum needed bits to function.
-	if($tc and ref $tc and $tc->can('check') and $tc->can('is_subtype_of') ) {
-		return sub {
-			if($tc->is_subtype_of('HashRef')) {
-				return $tc->check(+{@_});
-			} elsif($tc->is_subtype_of('ArrayRef')) {
-				return $tc->check([@_]);
-			} else {
-				return;
-			}
-		};		
-	} else {
-		## For now just pass it all to check and cross our fingers
-		return sub {
-			return $tc->check(@_);
-		};	
-	}
+	return sub {
+        $tc->check(shift);
+    };
 }
 
 =head1 SEE ALSO
