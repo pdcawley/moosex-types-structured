@@ -227,7 +227,6 @@ around 'get_message' => sub {
     my ($get_message, $self, $value) = @_;
     my $new_value = Devel::PartialDump::dump($value);
     return $self->$get_message($new_value);
-    
 };
 
 =head1 SEE ALSO

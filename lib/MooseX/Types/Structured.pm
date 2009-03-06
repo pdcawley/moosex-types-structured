@@ -1,9 +1,11 @@
 package MooseX::Types::Structured;
 
 use 5.008;
+
 use Moose::Util::TypeConstraints;
 use MooseX::Meta::TypeConstraint::Structured;
 use MooseX::Types -declare => [qw(Dict Tuple Optional)];
+use Sub::Exporter -setup => { exports => [ qw(Dict Tuple Optional slurpy) ] };
 
 our $VERSION = '0.07';
 our $AUTHORITY = 'cpan:JJNAPIORK';
@@ -689,6 +691,27 @@ OPTIONAL: {
     Moose::Util::TypeConstraints::add_parameterizable_type($Optional);
 }
 
+sub slurpy($) {
+	my $tc = shift @_;
+	## we don't want to force the TC to be a Moose::Meta::TypeConstraint, we
+	## just want to make sure it provides the minimum needed bits to function.
+	if($tc and ref $tc and $tc->can('check') and $tc->can('is_subtype_of') ) {
+		return sub {
+			if($tc->is_subtype_of('HashRef')) {
+				return $tc->check(+{@_});
+			} elsif($tc->is_subtype_of('ArrayRef')) {
+				return $tc->check([@_]);
+			} else {
+				return;
+			}
+		};		
+	} else {
+		## For now just pass it all to check and cross our fingers
+		return sub {
+			return $tc->check(@_);
+		};	
+	}
+}
 
 =head1 SEE ALSO
 
