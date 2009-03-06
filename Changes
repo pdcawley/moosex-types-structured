@@ -1,5 +1,18 @@
 Revision history for MooseX-Types-Structured
 
+0.08    06 March 2009
+        - New Feature: slurpy method for when you want a structured type
+          constraint that allows trailing arguments of indeterminate length.
+          Please see the documentation and the '11-overflow.t' test for more.
+        - Documentation for above as well as a bunch of POD cleanups, spell
+          checks and improvements to formatting.
+        - Stevan Little submitted a sweet  update to the '10-recursion.t' test
+          that blows my mind.  Will probably form the core of a to be done set
+          of cookbook style PODs.  Worth looking at.
+        - First step at improving the error message you get when validation
+          fails.  A full error stacktrace is not in this release, but you now
+          at least get to see part of the offending value.
+
 0.07    09 December 2008
         - Fixed typo in previous changelog
         - documentation improvements and updates
