@@ -10,6 +10,7 @@ license 'perl';
 ## Module dependencies
 requires 'Moose' => '0.63';
 requires 'MooseX::Types' => '0.08';
+requires 'Devel::PartialDump' => '0.07';
 
 ## Testing dependencies
 build_requires 'Test::More' => '0.70';

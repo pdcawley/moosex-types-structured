@@ -72,4 +72,3 @@ ok $array_tailed_dict->check({name=>'Vanessa Li', age=>35}), 'correct pass';
 ok !$array_tailed_dict->check([]), 'correct fail';
 ok $array_tailed_dict->check({name=>'Vanessa Li', age=>35, 1,2}), 'correct pass with tail';
 ok !$array_tailed_dict->check({name=>'Vanessa Li', age=>35, 1, "hello"}), 'correct fail with tail';
-

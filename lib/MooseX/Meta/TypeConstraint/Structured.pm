@@ -2,6 +2,7 @@ package ## Hide from PAUSE
  MooseX::Meta::TypeConstraint::Structured;
 
 use Moose;
+use Devel::PartialDump;
 use Moose::Util::TypeConstraints ();
 use MooseX::Meta::TypeCoercion::Structured;
 extends 'Moose::Meta::TypeConstraint';
@@ -215,7 +216,19 @@ sub type_constraints_equals {
 
 =head2 get_message
 
-May want to override this to set a more useful error message
+Give you a better peek into what's causing the error.  For now we stringify the
+incoming deep value with L<Devel::PartialDump> and pass that on to either your
+custom error message or the default one.  In the future we'll try to provide a
+more complete stack trace of the actual offending elements
+
+=cut
+
+around 'get_message' => sub {
+    my ($get_message, $self, $value) = @_;
+    my $new_value = Devel::PartialDump::dump($value);
+    return $self->$get_message($new_value);
+    
+};
 
 =head1 SEE ALSO
 
