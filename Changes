@@ -1,5 +1,9 @@
 Revision history for MooseX-Types-Structured
 
+0.09    07 March 2009
+        - I guess we don't support the "subtype MyType, [TypeConstraint]" syntax
+          anymore.  Changed the recursion test to reflect that, which should fix
+          my 100% fail rate :)
 0.08    06 March 2009
         - New Feature: slurpy method for when you want a structured type
           constraint that allows trailing arguments of indeterminate length.

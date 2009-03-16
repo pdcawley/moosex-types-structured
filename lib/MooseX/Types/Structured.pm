@@ -7,7 +7,7 @@ use MooseX::Meta::TypeConstraint::Structured;
 use MooseX::Types -declare => [qw(Dict Tuple Optional)];
 use Sub::Exporter -setup => { exports => [ qw(Dict Tuple Optional slurpy) ] };
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 our $AUTHORITY = 'cpan:JJNAPIORK';
 
 =head1 NAME

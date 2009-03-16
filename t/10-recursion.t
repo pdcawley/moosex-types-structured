@@ -31,13 +31,13 @@ BEGIN {
 
     subtype Var()   => as ScalarRef;
     subtype Const() => as Int | Str;
-    subtype Pair()  => Tuple[ Expr, Expr ];
+    subtype Pair()  => as Tuple[ Expr, Expr ];
 
     enum Op() => qw[ + - ];
 
-    subtype BinOp()  => Tuple[ Expr, Op, Expr ];
-    subtype Lambda() => Tuple[ Var, Expr ];
-    subtype App()    => Tuple[ Lambda, Expr ];
+    subtype BinOp()  => as Tuple[ Expr, Op, Expr ];
+    subtype Lambda() => as Tuple[ Var, Expr ];
+    subtype App()    => as Tuple[ Lambda, Expr ];
     subtype Expr()   => as Var | Const | Pair | BinOp | Lambda | App;
 
     sub match {
