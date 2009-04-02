@@ -1,5 +1,13 @@
 Revision history for MooseX-Types-Structured
 
+0.10    02 April 2009
+        - Minor documentation grammar fixes and one major example error fixed
+        - Much improved error reporting.  Now we return the 'internal' error
+          that kicked a validation failure.  It's still best to use this for
+          debugging rather than for actual user error messages, since I think
+          we are rapidly approaching a need for Moose constraints needing more
+          in the error and message reporting.
+        - Documentation for the above.
 0.09    07 March 2009
         - I guess we don't support the "subtype MyType, [TypeConstraint]" syntax
           anymore.  Changed the recursion test to reflect that, which should fix

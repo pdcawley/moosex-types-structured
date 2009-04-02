@@ -71,6 +71,29 @@ around 'new' => sub {
     return $self;
 };
 
+=head2 validate
+
+Messing with validate so that we can support niced error messages.
+=cut
+
+override 'validate' => sub {
+    my ($self, @args) = @_;
+    my $compiled_type_constraint = $self->_compiled_type_constraint;
+    my $message = bless {message=>undef}, 'MooseX::Types::Structured::Message';
+    my $result = $compiled_type_constraint->(@args, $message);
+
+    if($result) {
+        return $result;
+    } else {
+        my $args = Devel::PartialDump::dump(@args);
+        if(my $message = $message->{message}) {
+            return $self->get_message("$args, Internal Validation Error is: $message");
+        } else {
+            return $self->get_message($args);
+        }
+    }
+};
+
 =head2 generate_constraint_for ($type_constraints)
 
 Given some type constraints, use them to generate validation rules for an ref
@@ -81,9 +104,10 @@ of values (to be passed at check time)
 sub generate_constraint_for {
     my ($self, $type_constraints) = @_;
     return sub {
-        my (@args) = @_;
+        my $arg =  shift @_;
         my $constraint_generator = $self->constraint_generator;
-        return $constraint_generator->($type_constraints, @args);
+        my $result = $constraint_generator->($type_constraints, $arg, $_[0]);
+        return $result;
     };
 }
 
@@ -225,8 +249,9 @@ more complete stack trace of the actual offending elements
 
 around 'get_message' => sub {
     my ($get_message, $self, $value) = @_;
-    my $new_value = Devel::PartialDump::dump($value);
-    return $self->$get_message($new_value);
+    $value = Devel::PartialDump::dump($value)
+     if ref $value;
+    return $self->$get_message($value);
 };
 
 =head1 SEE ALSO

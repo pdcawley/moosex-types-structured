@@ -6,8 +6,9 @@ use Moose::Util::TypeConstraints;
 use MooseX::Meta::TypeConstraint::Structured;
 use MooseX::Types -declare => [qw(Dict Tuple Optional)];
 use Sub::Exporter -setup => { exports => [ qw(Dict Tuple Optional slurpy) ] };
+use Devel::PartialDump;
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 our $AUTHORITY = 'cpan:JJNAPIORK';
 
 =head1 NAME
@@ -489,7 +490,7 @@ This type library makes available for export the following subroutines
 =head2 slurpy
 
 Structured type constraints by their nature are closed; that is validation will
-depend and an exact match between your structure definition and the arguments to
+depend on an exact match between your structure definition and the arguments to
 be checked.  Sometimes you might wish for a slightly looser amount of validation.
 For example, you may wish to validate the first 3 elements of an array reference
 and allow for an arbitrary number of additional elements.  At first thought you
@@ -537,6 +538,23 @@ slurpy keywork transforms the target type constraint into a coderef.  Please do
 not try to create your own custom coderefs; always use the slurpy method.  The
 underlying technology may change in the future but the slurpy keyword will be
 supported.
+
+=head1 ERROR MESSAGES
+
+Error reporting has been improved to return more useful debugging messages. Now
+I will stringify the incoming check value with L<Devel::PartialDump> so that you
+can see the actual structure that is tripping up validation.  Also, I report the
+'internal' validation error, so that if a particular element inside the
+Structured Type is failing validation, you will see that.  There's a limit to
+how deep this internal reporting goes, but you shouldn't see any of the "failed
+with ARRAY(XXXXXX)" that we got with earlier versions of this module.
+
+This support is continuing to expand, so it's best to use these messages for
+debugging purposes and not for creating messages that 'escape into the wild'
+such as error messages sent to the user.
+
+Please see the test '12-error.t' for a more lengthy example.  Your thoughts and
+preferable tests or code patches very welcome!
 
 =head1 EXAMPLES
 
@@ -595,26 +613,32 @@ other MooseX::Types libraries.
 And now you can instantiate with all the following:
 
     __PACKAGE__->new(
-        name=>'John Napiorkowski',
-        age=>39,
+        person=>{
+            name=>'John Napiorkowski',
+            age=>39,            
+        },
     );
         
     __PACKAGE__->new(
-        first=>'John',
-        last=>'Napiorkowski',
-        years=>39,
+        person=>{
+            first=>'John',
+            last=>'Napiorkowski',
+            years=>39,
+        },
     );
     
     __PACKAGE__->new(
-        fullname => {
-            first=>'John',
-            last=>'Napiorkowski'
+        person=>{
+            fullname => {
+                first=>'John',
+                last=>'Napiorkowski'
+            },
+            dob => 'DateTime'->new(
+                year=>1969,
+                month=>2,
+                day=>13
+            ),            
         },
-        dob => 'DateTime'->new(
-            year=>1969,
-            month=>2,
-            day=>13
-        ),
     );
     
 This technique is a way to support various ways to instantiate your class in a
@@ -644,11 +668,15 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 				if(@values) {
 					my $value = shift @values;
 					unless($type_constraint->check($value)) {
+                        $_[2]->{message} = $type_constraint->get_message($value)
+                         if ref $_[2];
 						return;
 					}				
 				} else {
                     ## Test if the TC supports null values
 					unless($type_constraint->check()) {
+                        $_[2]->{message} = $type_constraint->get_message('NULL')
+                         if ref $_[2];
 						return;
 					}
 				}
@@ -656,12 +684,16 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 			## Make sure there are no leftovers.
 			if(@values) {
                 if($overflow_handler) {
-                    return $overflow_handler->([@values]);
+                    return $overflow_handler->([@values], $_[2]);
                 } else {
+                    $_[2]->{message} = "More values than Type Constraints!"
+                     if ref $_[2];
                     return;
                 }
 			} elsif(@type_constraints) {
-                warn "I failed due to left over TC";
+                $_[2]->{message} =
+                 "Not enough values for all defined type constraints.  Remaining: ". join(', ',@type_constraints)
+                 if ref $_[2];
 				return;
 			} else {
 				return 1;
@@ -694,11 +726,15 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 					my $value = $values{$key};
 					delete $values{$key};
 					unless($type_constraint->check($value)) {
+                        $_[2]->{message} = $type_constraint->get_message($value)
+                         if ref $_[2];
 						return;
 					}
 				} else {
                     ## Test to see if the TC supports null values
 					unless($type_constraint->check()) {
+                        $_[2]->{message} = $type_constraint->get_message('NULL')
+                         if ref $_[2];
 						return;
 					}
 				}
@@ -708,9 +744,14 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
                 if($overflow_handler) {
                     return $overflow_handler->(+{%values});
                 } else {
+                    $_[2]->{message} = "More values than Type Constraints!"
+                     if ref $_[2];
                     return;
                 }
 			} elsif(%type_constraints) {
+                $_[2]->{message} =
+                 "Not enough values for all defined type constraints.  Remaining: ". join(', ',values %values)
+                 if ref $_[2];
 				return;
 			} else {
 				return 1;
