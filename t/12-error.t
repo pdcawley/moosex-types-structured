@@ -1,7 +1,7 @@
 BEGIN {
 	use strict;
 	use warnings;
-	use Test::More tests=>24;
+	use Test::More tests=>25;
 }
 
 use Moose::Util::TypeConstraints;
@@ -119,3 +119,7 @@ ok $deep_tuple->check([1,{a=>2},{name=>'Vincent',age=>15}]),
 like $deep_tuple->validate([1,{a=>2},{name=>'Vincent',age=>'Hello'}]),
   qr/Error is: Validation failed for 'MooseX::Types::Structured::Dict\[name,Str,age,Int\]'/,
   'Example deeper error';
+  
+## Success Tests...
+
+ok !$deep_tuple->validate([1,{a=>2},{name=>'John',age=>40}]), 'Validates ok';

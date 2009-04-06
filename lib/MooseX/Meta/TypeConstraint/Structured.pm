@@ -78,13 +78,13 @@ Messing with validate so that we can support niced error messages.
 
 override 'validate' => sub {
     my ($self, @args) = @_;
-    my $compiled_type_constraint = $self->_compiled_type_constraint;
     my $message = bless {message=>undef}, 'MooseX::Types::Structured::Message';
-    my $result = $compiled_type_constraint->(@args, $message);
 
-    if($result) {
-        return $result;
+    if ($self->_compiled_type_constraint->(@args, $message)) {
+        ## Everything is good, no error message to return
+        return undef;
     } else {
+        ## Whoops, need to figure out the right error message
         my $args = Devel::PartialDump::dump(@args);
         if(my $message = $message->{message}) {
             return $self->get_message("$args, Internal Validation Error is: $message");

@@ -1,5 +1,8 @@
 Revision history for MooseX-Types-Structured
 
+0.11    06 April 2009
+        - Fixed braindead bug in the way I override ->validate, which caused
+        valiate to never correctly pass a constraint.  
 0.10    02 April 2009
         - Minor documentation grammar fixes and one major example error fixed
         - Much improved error reporting.  Now we return the 'internal' error
