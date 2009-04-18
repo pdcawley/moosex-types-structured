@@ -202,10 +202,65 @@ sub equals {
     return unless $other->isa(__PACKAGE__);
     
     return (
-        $self->type_constraints_equals($other)
+        $self->parent->equals($other->parent)
             and
-        $self->parent->equals( $other->parent )
+        $self->type_constraints_equals($other)
     );
+}
+
+sub is_a_type_of {
+    my ( $self, $type_or_name ) = @_;
+    my $other = Moose::Util::TypeConstraints::find_type_constraint($type_or_name);
+
+    if ( $other->isa(__PACKAGE__) and @{ $other->type_constraints || [] }) {
+        warn "structured ( $self, $other )";
+        if ( $self->parent->is_a_type_of($other->parent) ) {
+            warn "related ( $self, $other )";
+            return $self->_type_constraints_op_all($other, "is_a_type_of");
+        } elsif ( $self->parent->is_a_type_of($other) ) {
+            return 1;
+            # FIXME compare?
+        } else {
+            return 0;
+        }
+    } else {
+        return $self->SUPER::is_a_type_of($other);
+    }
+}
+
+sub is_subtype_of {
+    my ( $self, $type_or_name ) = @_;
+
+    my $other = Moose::Util::TypeConstraints::find_type_constraint($type_or_name);
+
+    if ( $other->isa(__PACKAGE__) ) {
+        if ( $other->type_constraints and $self->type_constraints ) {
+            if ( $self->parent->is_a_type_of($other->parent) ) {
+                return (
+                    $self->_type_constraints_op_all($other, "is_a_type_of")
+                      and
+                    $self->_type_constraints_op_any($other, "is_subtype_of")
+                );
+            } elsif ( $self->parent->is_a_type_of($other) ) {
+                return 1;
+                # FIXME compare?
+            } else {
+                return 0;
+            }
+        } else {
+            if ( $self->type_constraints ) {
+                if ( $self->SUPER::is_subtype_of($other) ) {
+                    return 1;
+                } else {
+                    return;
+                }
+            } else {
+                return $self->parent->is_subtype_of($other->parent);
+            }
+        }
+    } else {
+        return $self->SUPER::is_subtype_of($other);
+    }
 }
 
 =head2 type_constraints_equals
@@ -215,27 +270,56 @@ Checks to see if the internal type contraints are equal.
 =cut
 
 sub type_constraints_equals {
-    my ($self, $other) = @_;
+    my ( $self, $other ) = @_;
+    $self->_type_constraints_op_all($other, "equals");
+}
+
+sub _type_constraints_op_all {
+    my ($self, $other, $op) = @_;
+
+    return unless $other->isa(__PACKAGE__);
+
     my @self_type_constraints = @{$self->type_constraints||[]};
     my @other_type_constraints = @{$other->type_constraints||[]};
-    
+
+    return unless @self_type_constraints == @other_type_constraints;
+
     ## Incoming ay be either arrayref or hashref, need top compare both
     while(@self_type_constraints) {
         my $self_type_constraint = shift @self_type_constraints;
-        my $other_type_constraint = shift @other_type_constraints
-         || return; ## $other needs the same number of children.
+        my $other_type_constraint = shift @other_type_constraints;
         
-        if( ref $self_type_constraint) {
-            $self_type_constraint->equals($other_type_constraint)
-             || return; ## type constraints obviously need top be equal
-        } else {
-            $self_type_constraint eq $other_type_constraint
-             || return; ## strings should be equal
-        }
+        $_ = Moose::Util::TypeConstraints::find_or_create_isa_type_constraint($_)
+          for $self_type_constraint, $other_type_constraint;
 
+        $self_type_constraint->$op($other_type_constraint) or return;
     }
     
     return 1; ##If we get this far, everything is good.
+}
+
+sub _type_constraints_op_any {
+    my ($self, $other, $op) = @_;
+
+    return unless $other->isa(__PACKAGE__);
+
+    my @self_type_constraints = @{$self->type_constraints||[]};
+    my @other_type_constraints = @{$other->type_constraints||[]};
+
+    return unless @self_type_constraints == @other_type_constraints;
+
+    ## Incoming ay be either arrayref or hashref, need top compare both
+    while(@self_type_constraints) {
+        my $self_type_constraint = shift @self_type_constraints;
+        my $other_type_constraint = shift @other_type_constraints;
+        
+        $_ = Moose::Util::TypeConstraints::find_or_create_isa_type_constraint($_)
+          for $self_type_constraint, $other_type_constraint;
+        
+        return 1 if $self_type_constraint->$op($other_type_constraint);
+    }
+
+    return 0;
 }
 
 =head2 get_message
