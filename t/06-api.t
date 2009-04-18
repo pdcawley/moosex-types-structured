@@ -1,7 +1,7 @@
 BEGIN {
 	use strict;
 	use warnings;
-	use Test::More tests=>83;
+	use Test::More tests=>88;
 }
 
 use Moose::Util::TypeConstraints;
@@ -111,6 +111,12 @@ ok (!MyTuple1->is_a_type_of(MyTuple3), 'MyTuple1 NOT is_a_type_of MyTuple3');
 ok (!MyTuple2->is_a_type_of(MyTuple3), 'MyTuple2 NOT is_a_type_of MyTuple3');
 
 ## is_subtype_of
+
+ok ( not((Tuple[Tuple[ class_type('Paper'), class_type('Stone') ], Dict[]])->equals( Tuple[Tuple[ Item, Item ], Dict[]] )), "tuple of tuple" );
+ok ( (Tuple[Tuple[ class_type('Paper'), class_type('Stone') ], Dict[]])->equals( Tuple[Tuple[ class_type('Paper'), class_type('Stone') ], Dict[]] ), "tuple of tuple" );
+ok ( (Tuple[Tuple[ class_type('Paper'), class_type('Stone') ], Dict[]])->is_a_type_of( Tuple[Tuple[ Item, Item ], Dict[]] ), "tuple of tuple" );
+ok ( (Tuple[Tuple[ class_type('Paper'), class_type('Stone') ], Dict[]])->is_a_type_of( Tuple[Tuple[ Item, Item ], Dict[]] ), "tuple of tuple" );
+ok ( (Tuple[Tuple[ class_type('Paper'), class_type('Stone') ], Dict[]])->is_subtype_of( Tuple[Tuple[ Item, Item ], Dict[]] ), "tuple of tuple" );
 
 ok ( MyDict1->is_subtype_of(HashRef), 'MyDict1 is_subtype_of HashRef');
 ok ( MyDict1->is_subtype_of(Dict), 'MyDict1 is_subtype_of Dict');

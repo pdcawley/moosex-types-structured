@@ -213,9 +213,7 @@ sub is_a_type_of {
     my $other = Moose::Util::TypeConstraints::find_type_constraint($type_or_name);
 
     if ( $other->isa(__PACKAGE__) and @{ $other->type_constraints || [] }) {
-        warn "structured ( $self, $other )";
         if ( $self->parent->is_a_type_of($other->parent) ) {
-            warn "related ( $self, $other )";
             return $self->_type_constraints_op_all($other, "is_a_type_of");
         } elsif ( $self->parent->is_a_type_of($other) ) {
             return 1;
