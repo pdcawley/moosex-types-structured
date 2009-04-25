@@ -1,5 +1,8 @@
 Revision history for MooseX-Types-Structured
 
+0.13    25 April 2009
+        -- Explicitly don't inline yet another constructor to avoid
+           warnings (autarch).
 0.12    21 April 2009
         -- Explicitly don't inline the constructor to avoid warnings (rafl).
         -- Pathological test cases for API methods equals, is_a_type_of and

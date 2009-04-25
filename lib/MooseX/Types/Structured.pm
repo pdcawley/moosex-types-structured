@@ -8,7 +8,7 @@ use MooseX::Types -declare => [qw(Dict Tuple Optional)];
 use Sub::Exporter -setup => { exports => [ qw(Dict Tuple Optional slurpy) ] };
 use Devel::PartialDump;
 
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 our $AUTHORITY = 'cpan:JJNAPIORK';
 
 =head1 NAME
