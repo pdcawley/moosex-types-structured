@@ -3,15 +3,18 @@ Revision history for MooseX-Types-Structured
 0.13    25 April 2009
         -- Explicitly don't inline yet another constructor to avoid
            warnings (autarch).
+
 0.12    21 April 2009
         -- Explicitly don't inline the constructor to avoid warnings (rafl).
         -- Pathological test cases for API methods equals, is_a_type_of and
             is_subtype_of (rafl).
         -- significant improvements to API methods is_a_type_of, is_subtype_of
            and equals (nothingmuch).
+
 0.11    06 April 2009
         - Fixed braindead bug in the way I override ->validate, which caused
-        valiate to never correctly pass a constraint.  
+          valiate to never correctly pass a constraint.
+
 0.10    02 April 2009
         - Minor documentation grammar fixes and one major example error fixed
         - Much improved error reporting.  Now we return the 'internal' error
@@ -56,10 +59,10 @@ Revision history for MooseX-Types-Structured
         - This version requires a newer Moose than previous versions.  The
           Makefile.PL has been updated to reflect this.  This is a required
           update.
-        
+
 0.05    08 November 2008
         - Fixed some wackiness in the documentation.
-        
+
 0.04    07 November 2008
         - Bumped minimum required versions of Moose and MooseX-Types to solve
           problem with overloading and type constraint names (issue resolved
@@ -75,11 +78,11 @@ Revision history for MooseX-Types-Structured
         - various documentation cleanup
         - new test 'example.t' with runable versions of the code in the example
           POD section.
-        
+
 0.02    28 October 2008
         - cleared up some typos in the test suite
         - Fixed some POD formatting issues, mostly some dumb tabs I ended up
           with when I switched editors.  Added a bit more documentation
-        
+
 0.01    27 October 2008
         - Completed basic requirements, documentation and tests.
