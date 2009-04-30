@@ -52,6 +52,12 @@ has 'constraint_generator' => (
     predicate=>'has_constraint_generator',
 );
 
+has coercion => (
+    is      => 'ro',
+    isa     => 'Object',
+    builder => '_build_coercion',
+);
+
 =head1 METHODS
 
 This class defines the following methods.
@@ -62,14 +68,12 @@ Initialization stuff.
 
 =cut
 
-around 'new' => sub {
-    my ($new, $class, @args)  = @_;
-    my $self = $class->$new(@args);
-    $self->coercion(MooseX::Meta::TypeCoercion::Structured->new(
+sub _build_coercion {
+    my ($self) = @_;
+    return MooseX::Meta::TypeCoercion::Structured->new(
         type_constraint => $self,
-    ));
-    return $self;
-};
+    );
+}
 
 =head2 validate
 
