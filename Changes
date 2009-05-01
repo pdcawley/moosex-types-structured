@@ -1,15 +1,21 @@
 Revision history for MooseX-Types-Structured
 
+0.14    01 May 2009
+        - Use a builder instead of wrapping new to set the default structured
+          coercion (rafl).
+        - Make overflow (slurpy) type constraints introspectable and the name
+          of constraints using them reasonable (rafl).
+
 0.13    25 April 2009
-        -- Explicitly don't inline yet another constructor to avoid
-           warnings (autarch).
+        - Explicitly don't inline yet another constructor to avoid
+          warnings (autarch).
 
 0.12    21 April 2009
-        -- Explicitly don't inline the constructor to avoid warnings (rafl).
-        -- Pathological test cases for API methods equals, is_a_type_of and
-            is_subtype_of (rafl).
-        -- significant improvements to API methods is_a_type_of, is_subtype_of
-           and equals (nothingmuch).
+        - Explicitly don't inline the constructor to avoid warnings (rafl).
+        - Pathological test cases for API methods equals, is_a_type_of and
+          is_subtype_of (rafl).
+        - significant improvements to API methods is_a_type_of, is_subtype_of
+          and equals (nothingmuch).
 
 0.11    06 April 2009
         - Fixed braindead bug in the way I override ->validate, which caused
