@@ -659,7 +659,7 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
              @$type_constraints : ();
             
             my $overflow_handler;
-            if(blessed $type_constraints[-1]
+            if($type_constraints[-1] && blessed $type_constraints[-1]
               && $type_constraints[-1]->isa('MooseX::Types::Structured::OverflowHandler')) {
                 $overflow_handler = pop @type_constraints;
             }
@@ -716,7 +716,7 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
              @$type_constraints : ();
             
             my $overflow_handler;
-            if(blessed $type_constraints[-1]
+            if($type_constraints[-1] && blessed $type_constraints[-1]
               && $type_constraints[-1]->isa('MooseX::Types::Structured::OverflowHandler')) {
                 $overflow_handler = pop @type_constraints;
             } 
