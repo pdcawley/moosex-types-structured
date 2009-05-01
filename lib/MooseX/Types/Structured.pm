@@ -4,9 +4,11 @@ use 5.008;
 
 use Moose::Util::TypeConstraints;
 use MooseX::Meta::TypeConstraint::Structured;
+use MooseX::Types::Structured::OverflowHandler;
 use MooseX::Types -declare => [qw(Dict Tuple Optional)];
 use Sub::Exporter -setup => { exports => [ qw(Dict Tuple Optional slurpy) ] };
 use Devel::PartialDump;
+use Scalar::Util qw(blessed);
 
 our $VERSION = '0.13';
 our $AUTHORITY = 'cpan:JJNAPIORK';
@@ -657,7 +659,8 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
              @$type_constraints : ();
             
             my $overflow_handler;
-            if(ref $type_constraints[-1] eq 'CODE') {
+            if(blessed $type_constraints[-1]
+              && $type_constraints[-1]->isa('MooseX::Types::Structured::OverflowHandler')) {
                 $overflow_handler = pop @type_constraints;
             }
             
@@ -684,7 +687,7 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 			## Make sure there are no leftovers.
 			if(@values) {
                 if($overflow_handler) {
-                    return $overflow_handler->([@values], $_[2]);
+                    return $overflow_handler->check([@values], $_[2]);
                 } else {
                     $_[2]->{message} = "More values than Type Constraints!"
                      if ref $_[2];
@@ -713,7 +716,8 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
              @$type_constraints : ();
             
             my $overflow_handler;
-            if(ref $type_constraints[-1] eq 'CODE') {
+            if(blessed $type_constraints[-1]
+              && $type_constraints[-1]->isa('MooseX::Types::Structured::OverflowHandler')) {
                 $overflow_handler = pop @type_constraints;
             } 
             my (%type_constraints) = @type_constraints;
@@ -742,7 +746,7 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 			## Make sure there are no leftovers.
 			if(%values) { 
                 if($overflow_handler) {
-                    return $overflow_handler->(+{%values});
+                    return $overflow_handler->check(+{%values});
                 } else {
                     $_[2]->{message} = "More values than Type Constraints!"
                      if ref $_[2];
@@ -788,11 +792,11 @@ OPTIONAL: {
     Moose::Util::TypeConstraints::add_parameterizable_type($Optional);
 }
 
-sub slurpy($) {
-	my $tc = shift @_;
-	return sub {
-        $tc->check(shift);
-    };
+sub slurpy ($) {
+	my ($tc) = @_;
+	return MooseX::Types::Structured::OverflowHandler->new(
+        type_constraint => $tc,
+    );
 }
 
 =head1 SEE ALSO
