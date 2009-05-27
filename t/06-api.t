@@ -4,47 +4,57 @@ BEGIN {
 	use Test::More tests=>88;
 }
 
+{
+    package TypeLib;
+    use MooseX::Types::Structured qw(Dict Tuple);
+    use MooseX::Types::Moose qw(Int Str Item Object ArrayRef HashRef);
+    use MooseX::Types -declare => [qw(
+        MyDict1 MyDict2 MyDict3 MyDict4 subMyDict3 subMyDict1
+        MyTuple1 MyTuple2 MyTuple3 subMyTuple3
+    )];
+
+    ## Create some sample Dicts
+
+    subtype MyDict1,
+    as Dict[name=>Str, age=>Int];
+
+    subtype subMyDict1,
+    as MyDict1;
+
+    subtype MyDict2,
+    as Dict[name=>Str, age=>Int];
+
+    subtype MyDict3,
+    as Dict[key=>Int, anotherkey=>Str];
+
+    subtype subMyDict3,
+    as MyDict3;
+
+    subtype MyDict4,
+    as Dict[name=>Str, age=>Item];
+
+    ## Create some sample Tuples
+
+    subtype MyTuple1,
+    as Tuple[Int,Int,Str];
+
+    subtype MyTuple2,
+    as Tuple[Int,Int,Str];
+
+    subtype MyTuple3,
+    as Tuple[Object, HashRef];
+
+    subtype subMyTuple3,
+    as MyTuple3;
+}
+
 use Moose::Util::TypeConstraints;
 use MooseX::Types::Structured qw(Dict Tuple);
 use MooseX::Types::Moose qw(Int Str Item Object ArrayRef HashRef);
-use MooseX::Types -declare => [qw(
-    MyDict1 MyDict2 MyDict3 MyDict4 subMyDict3 subMyDict1
-    MyTuple1 MyTuple2 MyTuple3 subMyTuple3
-)];
 
-## Create some sample Dicts
-
-subtype MyDict1,
- as Dict[name=>Str, age=>Int];
-
-subtype subMyDict1,
- as MyDict1;
-
-subtype MyDict2,
- as Dict[name=>Str, age=>Int];
- 
-subtype MyDict3,
- as Dict[key=>Int, anotherkey=>Str];
- 
-subtype subMyDict3,
- as MyDict3;
-
-subtype MyDict4,
- as Dict[name=>Str, age=>Item];
-
-## Create some sample Tuples
-
-subtype MyTuple1,
- as Tuple[Int,Int,Str];
-
-subtype MyTuple2,
- as Tuple[Int,Int,Str];
- 
-subtype MyTuple3,
- as Tuple[Object, HashRef];
-
-subtype subMyTuple3,
- as MyTuple3;
+BEGIN {
+    TypeLib->import(':all');
+}
 
 ## Test equals
 
