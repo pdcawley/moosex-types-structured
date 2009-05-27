@@ -1,5 +1,8 @@
 Revision history for MooseX-Types-Structured
 
+0.15    27 May 2009
+        - Change copy on license and added contributors section
+
 0.14    01 May 2009
         - Use a builder instead of wrapping new to set the default structured
           coercion (rafl).
