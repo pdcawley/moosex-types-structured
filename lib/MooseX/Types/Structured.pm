@@ -10,7 +10,7 @@ use Sub::Exporter -setup => { exports => [ qw(Dict Tuple Optional slurpy) ] };
 use Devel::PartialDump;
 use Scalar::Util qw(blessed);
 
-our $VERSION = '0.14';
+our $VERSION = '0.155555';
 our $AUTHORITY = 'cpan:JJNAPIORK';
 
 =head1 NAME
@@ -814,13 +814,23 @@ All POD examples need test cases in t/documentation/*.t
 Want to break out the examples section to a separate cookbook style POD.
 Want more examples and best practice / usage guidance for authors
 Need to clarify deep coercions, 
-Need to clarify subtypes of subtypes.
 
 =head1 AUTHOR
 
+Copyright 2008-2009, John Napiorkowski <jjnapiork@cpan.org>
+
 John Napiorkowski, C<< <jjnapiork@cpan.org> >>
 
+=head1 CONTRIBUTORS
+
+The Following people have contributed to this module:
+
+    Florian Ragwitz, C<< <rafl@debian.org> >>
+    Yuval Kogman, C<< <nothingmuch@woobling.org> >>
+
 =head1 COPYRIGHT & LICENSE
+
+Copyright 2008-2009, John Napiorkowski <jjnapiork@cpan.org>
 
 This program is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
