@@ -14,7 +14,7 @@ BEGIN {
 	use MooseX::Types -declare => [qw(MyString)];
 	
     subtype MyString,
-     as 'Str',
+     as Str,
      where { $_=~m/abc/};
 	 
     has 'dict' => (is=>'rw', isa=>Dict[name=>Str, age=>Int]);
