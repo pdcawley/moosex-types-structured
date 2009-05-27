@@ -10,7 +10,7 @@ use Sub::Exporter -setup => { exports => [ qw(Dict Tuple Optional slurpy) ] };
 use Devel::PartialDump;
 use Scalar::Util qw(blessed);
 
-our $VERSION = '0.15';
+our $VERSION = '0.16';
 our $AUTHORITY = 'cpan:JJNAPIORK';
 
 =head1 NAME
