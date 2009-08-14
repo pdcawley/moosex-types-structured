@@ -1,5 +1,12 @@
 Revision history for MooseX-Types-Structured
 
+0.17   12 August 2009
+        - No new functionality.
+        - Changed the way we specify dependencies in the Makefile.PL to reduce
+          the depth of the dependency chain in cases where we don't need to be
+          running the author quality tests.
+        - Some documentation tweaks.
+
 0.16    28 May 2009
         - Fix failing tests and test warnings on MooseX::Types 0.11.
 

@@ -10,7 +10,7 @@ use Sub::Exporter -setup => { exports => [ qw(Dict Tuple Optional slurpy) ] };
 use Devel::PartialDump;
 use Scalar::Util qw(blessed);
 
-our $VERSION = '0.16';
+our $VERSION = '0.17';
 our $AUTHORITY = 'cpan:JJNAPIORK';
 
 =head1 NAME
@@ -43,6 +43,8 @@ The following is example usage for this module.
         Optional[HashRef],
      ],
     );
+
+	## Remainder of your class attributes and methods
 
 Then you can instantiate this class with something like:
 
@@ -143,6 +145,12 @@ would constrain it's value to things like ['hello', 111] but ['hello', 'world']
 would fail, as well as ['hello', 111, 'world'] and so on.  Here's another
 example:
 
+	package MyApp::Types;
+
+    use MooseX::Types -declare [qw(StringIntOptionalHashRef)];
+    use MooseX::Types::Moose qw(Str Int);
+	use MooseX::Types::Structured qw(Tuple Optional);
+
     subtype StringIntOptionalHashRef,
      as Tuple[
         Str, Int,
@@ -166,8 +174,10 @@ Please note the subtle difference between undefined and null.  If you wish to
 allow both null and undefined, you should use the core Moose 'Maybe' type
 constraint instead:
 
+	package MyApp::Types;
+
     use MooseX::Types -declare [qw(StringIntMaybeHashRef)];
-    use MooseX::Types::Moose qw(Maybe);
+    use MooseX::Types::Moose qw(Str Int Maybe);
     use MooseX::Types::Structured qw(Tuple);
 
     subtype StringIntMaybeHashRef,
@@ -182,7 +192,7 @@ This would validate the following:
     ['World', 200];
 
 Structured constraints are not limited to arrays.  You can define a structure
-against a HashRef with 'Dict' as in this example:
+against a HashRef with the 'Dict' type constaint as in this example:
 
     subtype FirstNameLastName,
      as Dict[
@@ -190,9 +200,9 @@ against a HashRef with 'Dict' as in this example:
         lastname => Str,
      ];
 
-This would constrain a HashRef to something like:
+This would constrain a HashRef that validates something like:
 
-    {firstname => 'Christopher', lastname= > 'Parsons'};
+    {firstname => 'Christopher', lastname => 'Parsons'};
     
 but all the following would fail validation:
 
@@ -203,7 +213,7 @@ but all the following would fail validation:
     {firstname => 'Christopher', lastname => 'Parsons', middlename => 'Allen'};
     
     ## Not a HashRef
-    ['Christopher', 'Christopher']; 
+    ['Christopher', 'Parsons']; 
 
 These structures can be as simple or elaborate as you wish.  You can even
 combine various structured, parameterized and simple constraints all together:
@@ -215,10 +225,28 @@ combine various structured, parameterized and simple constraints all together:
         ArrayRef[Int]
      ];
 	
-Which would match "[1, {name=>'John', age=>25},[10,11,12]]".  Please notice how
-the type parameters can be visually arranged to your liking and to improve the
-clarity of your meaning.  You don't need to run then altogether onto a single
-line.
+Which would match:
+
+	[1, {name=>'John', age=>25},[10,11,12]];
+
+Please notice how the type parameters can be visually arranged to your liking
+and to improve the clarity of your meaning.  You don't need to run then 
+altogether onto a single line.  Additionally, since the 'Dict' type constraint
+defines a hash constraint, the key order is not meaningful.  For example:
+
+	subtype AnyKeyOrder,
+ 	 as Dict[
+		key1=>Int,
+		key2=>Str,
+		key3=>Int,
+	 ];
+
+Would validate both:
+
+	{key1 => 1, key2 => "Hi!", key3 => 2};
+	{key2 => "Hi!", key1 => 100, key3 => 300};
+
+As you would expect, since underneath its just a plain old Perl hash at work.
 
 =head2 Alternatives
 
@@ -455,6 +483,13 @@ list of contained constraints.  For example:
     Tuple[Int,Str]; ## Validates [1,'hello']
     Tuple[Str|Object, Int]; ## Validates ['hello', 1] or [$object, 2]
 
+The Values of @constraints should ideally be L<MooseX::Types> declared type
+constraints.  We do support 'old style' L<Moose> string based constraints to a
+limited degree but these string type constraints are considered deprecated.
+There will be limited support for bugs resulting from mixing string and 
+L<MooseX::Types> in your structures.  If you encounter such a bug and really
+need it fixed, we will required a detailed test case at the minimum.
+
 =head2 Dict[%constraints]
 
 This defines a HashRef based constraint which allowed you to validate a specific
@@ -462,10 +497,13 @@ hashref.  For example:
 
     Dict[name=>Str, age=>Int]; ## Validates {name=>'John', age=>39}
 
+The keys in %constraints follow the same rules as @constraints in the above 
+section.
+
 =head2 Optional[$constraint]
 
 This is primarily a helper constraint for Dict and Tuple type constraints.  What
-this allows if for you to assert that a given type constraint is allowed to be
+this allows is for you to assert that a given type constraint is allowed to be
 null (but NOT undefined).  If the value is null, then the type constraint passes
 but if the value is defined it must validate against the type constraint.  This
 makes it easy to make a Dict where one or more of the keys doesn't have to exist
@@ -484,6 +522,9 @@ following are valid:
 
     {first=>'John', middle=>'James', last=>'Napiorkowski'}
     {first=>'Vanessa', last=>'Li'}
+
+If you use the 'Maybe' type constraint instead, your values will also validate
+against 'undef', which may be incorrect for you.
 
 =head1 EXPORTABLE SUBROUTINES
 
@@ -810,20 +851,19 @@ L<MooseX::Meta::TypeConstraint::Structured>
 
 Here's a list of stuff I would be happy to get volunteers helping with:
 
-All POD examples need test cases in t/documentation/*.t
-Want to break out the examples section to a separate cookbook style POD.
-Want more examples and best practice / usage guidance for authors
-Need to clarify deep coercions, 
+	* All POD examples need test cases in t/documentation/*.t
+	* Want to break out the examples section to a separate cookbook style POD.
+	* Want more examples and best practice / usage guidance for authors
+	* Need to clarify deep coercions, 
 
 =head1 AUTHOR
 
-Copyright 2008-2009, John Napiorkowski <jjnapiork@cpan.org>
-
-John Napiorkowski, C<< <jjnapiork@cpan.org> >>
+John Napiorkowski C<< <jjnapiork@cpan.org> >>
 
 =head1 CONTRIBUTORS
 
-The Following people have contributed to this module:
+The following people have contributed to this module and agree with the listed
+Copyright & license information included below:
 
     Florian Ragwitz, C<< <rafl@debian.org> >>
     Yuval Kogman, C<< <nothingmuch@woobling.org> >>
@@ -832,8 +872,8 @@ The Following people have contributed to this module:
 
 Copyright 2008-2009, John Napiorkowski <jjnapiork@cpan.org>
 
-This program is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut
 	

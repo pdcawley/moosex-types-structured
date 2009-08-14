@@ -16,8 +16,10 @@ requires 'Sub::Exporter' => '0.982';
 ## Testing dependencies
 build_requires 'Test::More' => '0.70';
 build_requires 'Test::Exception' => '0.27';
-build_requires 'Test::Pod' => '1.14';
-build_requires 'Test::Pod::Coverage' => '1.08';
+
+## Author tests dependencies
+recommends 'Test::Pod' => '1.14';
+recommends 'Test::Pod::Coverage' => '1.08';
 
 ## Build README
 system 'pod2text lib/MooseX/Types/Structured.pm > README'
