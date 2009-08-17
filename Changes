@@ -1,5 +1,10 @@
 Revision history for MooseX-Types-Structured
 
+0.18   17 August 2009
+        - Changed the Makefile.PL to reduce dependencies not needed by users
+          that are not authors.  Bumped the revision and released to clear an
+          error with cpan permissions.
+
 0.17   12 August 2009
         - No new functionality.
         - Changed the way we specify dependencies in the Makefile.PL to reduce
