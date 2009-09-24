@@ -553,7 +553,7 @@ However what this will actually validate are structures like this:
     [10,"Hello", $obj, [11,12,13,...] ]; # Notice element 4 is an ArrayRef
 
 In order to allow structured validation of, "and then some", arguments, you can
-use the </slurpy> method against a type constraint.  For example:
+use the L</slurpy> method against a type constraint.  For example:
 
     use MooseX::Types::Structured qw(Tuple slurpy);
     
@@ -577,7 +577,7 @@ another Tuple) and a Dict can allow a slurpy HashRef (or children/subtypes of
 HashRef, also including other Dict constraints).
 
 Please note the the technical way this works 'under the hood' is that the
-slurpy keywork transforms the target type constraint into a coderef.  Please do
+slurpy keyword transforms the target type constraint into a coderef.  Please do
 not try to create your own custom coderefs; always use the slurpy method.  The
 underlying technology may change in the future but the slurpy keyword will be
 supported.
@@ -858,15 +858,15 @@ Here's a list of stuff I would be happy to get volunteers helping with:
 
 =head1 AUTHOR
 
-John Napiorkowski C<< <jjnapiork@cpan.org> >>
+John Napiorkowski <jjnapiork@cpan.org>
 
 =head1 CONTRIBUTORS
 
 The following people have contributed to this module and agree with the listed
 Copyright & license information included below:
 
-    Florian Ragwitz, C<< <rafl@debian.org> >>
-    Yuval Kogman, C<< <nothingmuch@woobling.org> >>
+    Florian Ragwitz, <rafl@debian.org>
+    Yuval Kogman, <nothingmuch@woobling.org>
 
 =head1 COPYRIGHT & LICENSE
 
