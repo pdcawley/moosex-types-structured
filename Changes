@@ -1,5 +1,6 @@
 Revision history for MooseX-Types-Structured
 
+0.19   06 November 2009
         - Require Devel::PartialDump 0.10 and change tests to expect the
           correct format of error.
 
