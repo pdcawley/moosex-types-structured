@@ -1,5 +1,8 @@
 Revision history for MooseX-Types-Structured
 
+        - Require Devel::PartialDump 0.10 and change tests to expect the
+          correct format of error.
+
 0.18   17 August 2009
         - Changed the Makefile.PL to reduce dependencies not needed by users
           that are not authors.  Bumped the revision and released to clear an

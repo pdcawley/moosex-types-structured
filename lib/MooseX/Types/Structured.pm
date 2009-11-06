@@ -867,6 +867,7 @@ Copyright & license information included below:
 
     Florian Ragwitz, <rafl@debian.org>
     Yuval Kogman, <nothingmuch@woobling.org>
+    Tomas Doran, <bobtfish@bobtfish.net>
 
 =head1 COPYRIGHT & LICENSE
 

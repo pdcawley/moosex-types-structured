@@ -23,7 +23,7 @@ ok !$simple_dict->check({name=>$simple_dict,age=>'hello'}), "simple_dict fails: 
 ## Let's check all the expected validation errors for tuple
 
 like $simple_tuple->validate({a=>1,b=>2}),
- qr/Validation failed for 'simple_tuple' failed with value { a => 1, b => 2 }/,
+ qr/Validation failed for 'simple_tuple' failed with value { a: 1, b: 2 }/,
  'Wrong basic type';
 
 like $simple_tuple->validate(['a','b']),
@@ -53,7 +53,7 @@ like $simple_dict->validate({name=>'John',age=>'a'}),
  'Correctly failed due to age not an Int';
  
 like $simple_dict->validate({name=>$simple_dict,age=>1}),
- qr/failed with value { age => 1, name => MooseX:/,
+ qr/failed with value { age: 1, name: MooseX:/,
  'Correctly failed due to object not a Str';
 
 like $simple_dict->validate({name=>'John'}),
@@ -70,7 +70,7 @@ like $simple_dict->validate({name=>'Vincent', age=>15,extra=>'morethanIneed'}),
  my $optional_dict = subtype 'optional_dict', as Dict[name=>Str,age=>Optional[Int]];
  
  like $optional_tuple->validate({a=>1,b=>2}),
- qr/Validation failed for 'optional_tuple' failed with value { a => 1, b => 2 }/,
+ qr/Validation failed for 'optional_tuple' failed with value { a: 1, b: 2 }/,
  'Wrong basic type';
 
 like $optional_tuple->validate(['a','b']),
@@ -94,7 +94,7 @@ like $optional_dict->validate({name=>'John',age=>'a'}),
  'Correctly failed due to age not an Int';
  
 like $optional_dict->validate({name=>$simple_dict,age=>1}),
- qr/failed with value { age => 1, name => MooseX:/,
+ qr/failed with value { age: 1, name: MooseX:/,
  'Correctly failed due to object not a Str';
 
 like $optional_dict->validate({name=>'Vincent', age=>15,extra=>'morethanIneed'}),
