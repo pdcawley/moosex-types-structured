@@ -13,3 +13,4 @@ Debian*
 README
 MooseX-Types-Structured-*
 *.bs
+git-daemon-export-ok
