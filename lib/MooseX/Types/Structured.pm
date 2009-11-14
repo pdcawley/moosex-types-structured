@@ -693,6 +693,94 @@ Moose::Util::TypeConstraints::get_type_constraint_registry->add_type_constraint(
 	MooseX::Meta::TypeConstraint::Structured->new(
 		name => "MooseX::Types::Structured::Tuple" ,
 		parent => find_type_constraint('ArrayRef'),
+        constraint_unroller =>
+        sub {
+            my($tuple, $constraints) = @_;
+            my @constraints = defined $constraints
+                ? @$constraints : ();
+            return $tuple->the_null_constraint unless @constraints;
+
+            my $overflow_handler;
+            if ( $constraints[-1] && blessed $constraints[-1]
+                 && $constraints[-1]->isa('MooseX::Types::Structured::OverflowHandler')) {
+                $overflow_handler = pop @constraints;
+            }
+
+            my $unrolled_loop = '';
+            for my $i (0..$#constraints) {
+                my $tc = $constraints[$i];
+                next if $tuple->is_null_constraint($tc);
+                $unrolled_loop .= "
+\$value = \$values[$i];
+\$tc = \$constraints[$i];
+if (\@values > $i) {
+    \$tc->check(\$value)
+        or die {
+            index => $i,
+            message => \$tc->get_message(\$value),
+            values => [\@values],
+        };
+}
+else {
+    \$tc->check()
+        or die {
+            index => $i,
+            message => \$tc->get_message('NULL'),
+            values => [\@values],
+        };
+}
+"
+            }
+
+            if ($overflow_handler) {
+                $unrolled_loop .= "
+return \$overflow_handler->check([\@values[\@constraints..\$#values]], \$_[1]) if \@values > \@constraints;
+" unless $tuple->is_null_constraint($overflow_handler);
+            }
+            else {
+                $unrolled_loop .= "
+if (\@values > \@constraints) {
+    die {
+        message => 'More values than Type Constraints!',
+        values => [\@values],
+        index => scalar(\@constraints),
+    };
+}
+"
+            }
+            return $tuple->the_null_constraint unless $unrolled_loop;
+
+            my $retsub = do {
+                local $@;
+                my $builder_str = <<"EOPREAMBLE" . $unrolled_loop . <<"EOPOSTAMBLE";
+sub {
+    my(\$overflow_handler, \$constraints) = \@_;
+    my \@constraints = \@\$constraints;
+    return sub {
+        my(\$values) = \@_;
+        my \@values = defined \$values ? \@\$values : ();
+        my(\$tc, \$value);
+        local \$\@;
+        my \$ret = eval {
+EOPREAMBLE
+            1;
+        };
+        my \$err = \$\@;
+        if (\$err) {
+           \$_[1]->{message} = \$err->{message} if ref(\$err) && ref(\$_[1]);
+           return 0;
+        }
+        return \$ret;
+    }
+}
+EOPOSTAMBLE
+                my $ret = eval $builder_str;
+                die $@ if $@;
+                return $ret->($overflow_handler, \@constraints);
+            };
+
+            return
+        },
 		constraint_generator=> sub { 
 			## Get the constraints and values to check
             my ($type_constraints, $values) = @_;

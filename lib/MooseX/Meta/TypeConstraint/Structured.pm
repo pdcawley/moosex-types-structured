@@ -52,6 +52,12 @@ has 'constraint_generator' => (
     predicate=>'has_constraint_generator',
 );
 
+has constraint_unroller => (
+    is => 'ro',
+    isa => 'CodeRef',
+    predicate => 'has_constraint_unroller',
+);
+
 has coercion => (
     is      => 'ro',
     isa     => 'Object',
@@ -107,12 +113,30 @@ of values (to be passed at check time)
 
 sub generate_constraint_for {
     my ($self, $type_constraints) = @_;
-    return sub {
-        my $arg =  shift @_;
-        my $constraint_generator = $self->constraint_generator;
-        my $result = $constraint_generator->($type_constraints, $arg, $_[0]);
-        return $result;
+    return $self->unroll($type_constraints) || sub {
+        $self->constraint_generator->($type_constraints, @_);
     };
+}
+
+sub unroll {
+    my($self, $type_constraints) = @_;
+    return unless $self->constraint_unroller;
+    my $unroller = $self->constraint_unroller;
+    $self->$unroller($type_constraints);
+}
+
+
+my $the_null_constraint = Moose::Util::TypeConstraints::find_type_constraint('Any')->constraint;
+
+sub is_null_constraint {
+    my($self, $type_constraint) = @_;
+    return blessed($type_constraint)
+        && $type_constraint->can('constraint')
+        && $type_constraint->constraint == $the_null_constraint;
+}
+
+sub the_null_constraint {
+    $the_null_constraint;
 }
 
 =head2 parameterize (@type_constraints)
@@ -122,7 +146,6 @@ Given a ref of type constraints, create a structured type.
 =cut
 
 sub parameterize {
-    
     my ($self, @type_constraints) = @_;
     my $class = ref $self;
     my $name = $self->name .'['. join(',', map {"$_"} @type_constraints) .']';
@@ -133,8 +156,12 @@ sub parameterize {
         parent => $self,
         type_constraints => \@type_constraints,
         constraint_generator => $constraint_generator,
+        $self->has_constraint_unroller
+           ? (constraint_unroller => $self->constraint_unroller)
+           : (),
     );
 }
+
 
 =head2 __infer_constraint_generator
 
